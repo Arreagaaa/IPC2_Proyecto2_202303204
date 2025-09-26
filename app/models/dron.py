@@ -7,6 +7,13 @@ class Dron:
         self.fertilizante_utilizado = 0  # Gramos de fertilizante utilizados
         self.finalizado = False  # Estado de finalización
 
+    def asignar_hilera(self, hilera):
+        self.hilera_asignada = hilera
+
+    @property
+    def nombre(self):
+        return self.id
+
     def mover_adelante(self):
         if self.hilera_asignada and self.posicion_actual < self.hilera_asignada.obtener_cantidad_plantas():
             self.posicion_actual += 1

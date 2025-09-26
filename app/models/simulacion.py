@@ -1,5 +1,48 @@
-from ..tdas import ListaEnlazada
-from .invernadero import Invernadero
+from app.tdas.lista_enlazada import ListaEnlazada
+from app.models.invernadero import Invernadero
+
+
+class RegistroTiempo:
+    def __init__(self, tiempo, instrucciones):
+        self.tiempo = tiempo
+        self.instrucciones = instrucciones
+
+
+class InstruccionesDron:
+    def __init__(self):
+        self.instrucciones = ListaEnlazada()
+
+    def agregar_instruccion(self, dron_id, instruccion):
+        self.instrucciones.insertar_al_final(
+            InstruccionDron(dron_id, instruccion))
+
+    def obtener_instruccion(self, dron_id):
+        for instruccion in self.instrucciones:
+            if instruccion.dron_id == dron_id:
+                return instruccion.instruccion
+        return None
+
+
+class InstruccionDron:
+    def __init__(self, dron_id, instruccion):
+        self.dron_id = dron_id
+        self.instruccion = instruccion
+
+
+class ResultadoDron:
+    def __init__(self, id_dron, agua_utilizada, fertilizante_utilizado):
+        self.id = id_dron
+        self.agua_utilizada = agua_utilizada
+        self.fertilizante_utilizado = fertilizante_utilizado
+
+
+class ResultadosSimulacion:
+    def __init__(self, tiempo_total, total_agua, total_fertilizante, resultados_drones, plan_ejecutado):
+        self.tiempo_total = tiempo_total
+        self.total_agua = total_agua
+        self.total_fertilizante = total_fertilizante
+        self.resultados_drones = resultados_drones
+        self.plan_ejecutado = plan_ejecutado
 
 
 class Simulacion:
@@ -15,7 +58,7 @@ class Simulacion:
     def ejecutar_simulacion(self):
         # Validar configuración antes de iniciar
         errores = self.invernadero.validar_configuracion()
-        if errores:
+        if errores.obtener_tamaño() > 0:
             return False, errores
 
         # Reiniciar estado
@@ -28,10 +71,9 @@ class Simulacion:
         while self.invernadero.plan_riego.hay_pasos_pendientes():
             self.tiempo_actual += 1
             instrucciones_tiempo = self._ejecutar_paso_simulacion()
-            self.registro_instrucciones.insertar_al_final({
-                'tiempo': self.tiempo_actual,
-                'instrucciones': instrucciones_tiempo
-            })
+            self.registro_instrucciones.insertar_al_final(
+                RegistroTiempo(self.tiempo_actual, instrucciones_tiempo)
+            )
 
         # Finalizar todos los drones
         self._finalizar_drones()
@@ -42,7 +84,7 @@ class Simulacion:
         return True, []
 
     def _ejecutar_paso_simulacion(self):
-        instrucciones = {}
+        instrucciones = InstruccionesDron()
 
         # Obtener el siguiente paso del plan
         if self.paso_actual_plan is None and self.invernadero.plan_riego.hay_pasos_pendientes():
@@ -52,7 +94,7 @@ class Simulacion:
         for dron in self.invernadero.drones:
             if not dron.finalizado:
                 instruccion = self._generar_instruccion_dron(dron)
-                instrucciones[dron.id] = instruccion
+                instrucciones.agregar_instruccion(dron.id, instruccion)
 
         return instrucciones
 
@@ -60,8 +102,8 @@ class Simulacion:
         if self.paso_actual_plan is None:
             return "Esperar"
 
-        hilera_objetivo = self.paso_actual_plan['hilera']
-        planta_objetivo = self.paso_actual_plan['planta']
+        hilera_objetivo = self.paso_actual_plan.hilera
+        planta_objetivo = self.paso_actual_plan.planta
 
         # Si este dron no es el asignado a la hilera objetivo, esperar
         if dron.hilera_asignada.numero != hilera_objetivo:
@@ -89,110 +131,118 @@ class Simulacion:
         return "Esperar"
 
     def _finalizar_drones(self):
-        drones_activos = []
+        drones_activos = ListaEnlazada()
         for dron in self.invernadero.drones:
             if not dron.finalizado:
-                drones_activos.append(dron)
+                drones_activos.insertar_al_final(dron)
 
-        while drones_activos:
+        while drones_activos.obtener_tamaño() > 0:
             self.tiempo_actual += 1
-            instrucciones = {}
-            drones_a_remover = []
+            instrucciones = InstruccionesDron()
+            drones_a_remover = ListaEnlazada()
 
             for dron in drones_activos:
                 if dron.posicion_actual > 0:
                     dron.mover_atras()
                     if dron.posicion_actual == 0:
                         dron.finalizar()
-                        instrucciones[dron.id] = "FIN"
-                        drones_a_remover.append(dron)
+                        instrucciones.agregar_instruccion(dron.id, "FIN")
+                        drones_a_remover.insertar_al_final(dron)
                     else:
                         nueva_posicion = dron.obtener_estado_posicion()
-                        instrucciones[dron.id] = f"Regresar ({nueva_posicion})"
+                        instrucciones.agregar_instruccion(
+                            dron.id, f"Regresar ({nueva_posicion})")
                 else:
                     dron.finalizar()
-                    instrucciones[dron.id] = "FIN"
-                    drones_a_remover.append(dron)
+                    instrucciones.agregar_instruccion(dron.id, "FIN")
+                    drones_a_remover.insertar_al_final(dron)
 
             # Remover drones finalizados
-            for dron in drones_a_remover:
-                drones_activos.remove(dron)
+            for dron_a_remover in drones_a_remover:
+                for i in range(drones_activos.obtener_tamaño()):
+                    if drones_activos.obtener(i).id == dron_a_remover.id:
+                        drones_activos.eliminar_en_posicion(i)
+                        break
 
-            if instrucciones:
-                self.registro_instrucciones.insertar_al_final({
-                    'tiempo': self.tiempo_actual,
-                    'instrucciones': instrucciones
-                })
+            if instrucciones.instrucciones.obtener_tamaño() > 0:
+                self.registro_instrucciones.insertar_al_final(
+                    RegistroTiempo(self.tiempo_actual, instrucciones)
+                )
 
     def obtener_resultados(self):
         if not self.simulacion_completada:
             return None
 
         # Calcular totales por dron
-        resultados_drones = []
+        resultados_drones = ListaEnlazada()
         total_agua = 0
         total_fertilizante = 0
 
         for dron in self.invernadero.drones:
-            resultados_drones.append({
-                'id': dron.id,
-                'agua_utilizada': dron.agua_utilizada,
-                'fertilizante_utilizado': dron.fertilizante_utilizado
-            })
+            resultado_dron = ResultadoDron(
+                dron.id,
+                dron.agua_utilizada,
+                dron.fertilizante_utilizado
+            )
+            resultados_drones.insertar_al_final(resultado_dron)
             total_agua += dron.agua_utilizada
             total_fertilizante += dron.fertilizante_utilizado
 
-        return {
-            'tiempo_total': self.tiempo_total,
-            'total_agua': total_agua,
-            'total_fertilizante': total_fertilizante,
-            'resultados_drones': resultados_drones,
-            'plan_ejecutado': self.invernadero.plan_riego.obtener_plan_original()
-        }
+        return ResultadosSimulacion(
+            self.tiempo_total,
+            total_agua,
+            total_fertilizante,
+            resultados_drones,
+            self.invernadero.plan_riego.obtener_plan_original()
+        )
 
     def obtener_registro_instrucciones(self):
-        registro = []
-        for entrada in self.registro_instrucciones:
-            registro.append(entrada)
-        return registro
+        return self.registro_instrucciones
 
     def generar_reporte_detallado(self):
         if not self.simulacion_completada:
             return "Simulación no completada"
 
-        reporte = []
-        reporte.append(
+        reporte = ListaEnlazada()
+        reporte.insertar_al_final(
             f"=== REPORTE DE SIMULACIÓN - {self.invernadero.nombre} ===\n")
 
         # Información del plan
-        reporte.append(
+        reporte.insertar_al_final(
             f"Plan de riego ejecutado: {self.invernadero.plan_riego.obtener_plan_original()}")
-        reporte.append(
+        reporte.insertar_al_final(
             f"Tiempo total de ejecución: {self.tiempo_total} segundos\n")
 
         # Registro de instrucciones
-        reporte.append("=== INSTRUCCIONES POR TIEMPO ===")
+        reporte.insertar_al_final("=== INSTRUCCIONES POR TIEMPO ===")
         for entrada in self.registro_instrucciones:
-            tiempo = entrada['tiempo']
-            instrucciones = entrada['instrucciones']
-            reporte.append(f"Tiempo {tiempo}:")
-            for dron_id, instruccion in instrucciones.items():
-                reporte.append(f"  {dron_id}: {instruccion}")
+            tiempo = entrada.tiempo
+            instrucciones = entrada.instrucciones
+            reporte.insertar_al_final(f"Tiempo {tiempo}:")
+            for instruccion in instrucciones.instrucciones:
+                reporte.insertar_al_final(
+                    f"  {instruccion.dron_id}: {instruccion.instruccion}")
 
         # Resultados
         resultados = self.obtener_resultados()
-        reporte.append(f"\n=== RESULTADOS FINALES ===")
-        reporte.append(
-            f"Agua total utilizada: {resultados['total_agua']} litros")
-        reporte.append(
-            f"Fertilizante total utilizado: {resultados['total_fertilizante']} gramos")
+        reporte.insertar_al_final(f"\n=== RESULTADOS FINALES ===")
+        reporte.insertar_al_final(
+            f"Agua total utilizada: {resultados.total_agua} litros")
+        reporte.insertar_al_final(
+            f"Fertilizante total utilizado: {resultados.total_fertilizante} gramos")
 
-        reporte.append(f"\n=== RESULTADOS POR DRON ===")
-        for resultado_dron in resultados['resultados_drones']:
-            reporte.append(f"{resultado_dron['id']}: {resultado_dron['agua_utilizada']} litros, "
-                           f"{resultado_dron['fertilizante_utilizado']} gramos")
+        reporte.insertar_al_final(f"\n=== RESULTADOS POR DRON ===")
+        for resultado_dron in resultados.resultados_drones:
+            reporte.insertar_al_final(f"{resultado_dron.id}: {resultado_dron.agua_utilizada} litros, "
+                                      f"{resultado_dron.fertilizante_utilizado} gramos")
 
-        return "\n".join(reporte)
+        # Convertir ListaEnlazada a string
+        resultado_final = ""
+        for i in range(reporte.obtener_tamaño()):
+            if i > 0:
+                resultado_final += "\n"
+            resultado_final += reporte.obtener(i)
+        return resultado_final
 
     def __str__(self):
         estado = "Completada" if self.simulacion_completada else "Pendiente"

@@ -1,4 +1,5 @@
 from .nodo import Nodo
+from .lista_enlazada import ListaEnlazada
 
 
 class Cola:
@@ -53,13 +54,20 @@ class Cola:
         if self.esta_vacia():
             return "Cola vacía"
 
-        elementos = []
+        elementos = ListaEnlazada()
         actual = self.frente
         while actual:
-            elementos.append(str(actual.dato))
+            elementos.insertar_al_final(str(actual.dato))
             actual = actual.siguiente
 
-        return "Frente -> [" + " | ".join(elementos) + "] <- Final"
+        # Convertir lista enlazada a string
+        cadena_elementos = ""
+        for i in range(elementos.obtener_tamaño()):
+            if i > 0:
+                cadena_elementos += " | "
+            cadena_elementos += elementos.obtener(i)
+
+        return "Frente -> [" + cadena_elementos + "] <- Final"
 
     def __iter__(self):
         actual = self.frente

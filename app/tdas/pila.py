@@ -42,13 +42,20 @@ class Pila:
         if self.esta_vacia():
             return "Pila vacía"
 
-        elementos = []
+        # Construir cadena sin usar listas nativas
+        resultado = "Tope -> ["
         actual = self.tope
-        while actual:
-            elementos.append(str(actual.dato))
-            actual = actual.siguiente
+        es_primero = True
 
-        return "Tope -> [" + " | ".join(elementos) + "]"
+        while actual:
+            if not es_primero:
+                resultado += " | "
+            resultado += str(actual.dato)
+            actual = actual.siguiente
+            es_primero = False
+
+        resultado += "]"
+        return resultado
 
     def __iter__(self):
         actual = self.tope

@@ -117,13 +117,20 @@ class ListaEnlazada:
         if self.esta_vacia():
             return "[]"
 
-        elementos = []
+        # Construir cadena sin usar listas nativas
+        resultado = "["
         actual = self.cabeza
-        while actual:
-            elementos.append(str(actual.dato))
-            actual = actual.siguiente
+        es_primero = True
 
-        return "[" + " -> ".join(elementos) + "]"
+        while actual:
+            if not es_primero:
+                resultado += " -> "
+            resultado += str(actual.dato)
+            actual = actual.siguiente
+            es_primero = False
+
+        resultado += "]"
+        return resultado
 
     def __iter__(self):
         actual = self.cabeza

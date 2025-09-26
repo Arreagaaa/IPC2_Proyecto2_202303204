@@ -1,5 +1,5 @@
-from ..tdas import ListaEnlazada
-from .planta import Planta
+from app.tdas.lista_enlazada import ListaEnlazada
+from app.models.planta import Planta
 
 
 class Hilera:
@@ -24,6 +24,12 @@ class Hilera:
     def obtener_cantidad_plantas(self):
         return self.plantas.obtener_tamaño()
 
+    def establecer_planta_en_posicion(self, posicion, planta):
+        # Establecer la posición de la planta
+        planta.posicion = posicion
+        # Simplemente agregar al final - las plantas se procesarán en orden
+        self.plantas.insertar_al_final(planta)
+
     def asignar_dron(self, dron):
         self.dron_asignado = dron
         dron.hilera_asignada = self
@@ -32,7 +38,8 @@ class Hilera:
         total_agua = 0
         total_fertilizante = 0
 
-        for planta in self.plantas:
+        for i in range(self.plantas.obtener_tamaño()):
+            planta = self.plantas.obtener(i)
             total_agua += planta.litros_agua
             total_fertilizante += planta.gramos_fertilizante
 
