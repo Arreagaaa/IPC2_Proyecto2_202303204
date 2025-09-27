@@ -1,8 +1,9 @@
 from .nodo import Nodo
 
 
+# estructura de datos pila LIFO
 class Pila:
-    # Pila (LIFO - Last In, First Out) para almacenar elementos
+    # pila LIFO para almacenar elementos
 
     def __init__(self):
         self.tope = None

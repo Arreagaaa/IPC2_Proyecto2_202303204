@@ -1,9 +1,11 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from app.models.simulacion import ResultadosSimulacion, RegistroTiempo, InstruccionesDron
+from app.models.resultado import Resultado
 from app.tdas.lista_enlazada import ListaEnlazada
 
 
+#generador de archivos XML de salida
 class XMLGenerator:
     def __init__(self):
         pass
@@ -87,10 +89,10 @@ class XMLGenerator:
                         f.write('\n')
                     f.write(non_empty_lines.obtener(i))
 
-            return True, "Archivo de salida generado exitosamente"
+            return Resultado(True, "Archivo de salida generado exitosamente")
 
         except Exception as e:
-            return False, f"Error al generar archivo de salida: {str(e)}"
+            return Resultado(False, f"Error al generar archivo de salida: {str(e)}")
 
     def generar_resumen_xml(self, invernadero, resultados_simulacion):
         try:

@@ -2,8 +2,9 @@ from .nodo import Nodo
 from .lista_enlazada import ListaEnlazada
 
 
+# estructura de datos cola FIFO
 class Cola:
-    # Cola (FIFO - First In, First Out) para procesar elementos en orden
+    # cola FIFO para procesar elementos en orden
     def __init__(self):
         self.frente = None
         self.final = None

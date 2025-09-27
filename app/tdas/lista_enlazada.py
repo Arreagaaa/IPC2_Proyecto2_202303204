@@ -1,5 +1,7 @@
 from .nodo import Nodo
 
+# estructura de datos lista enlazada dinamica
+
 
 class ListaEnlazada:
     def __init__(self):
@@ -16,6 +18,7 @@ class ListaEnlazada:
         self.tamaño += 1
 
     def insertar_al_final(self, dato):
+        # insertar elemento al final de la lista
         nuevo_nodo = Nodo(dato)
 
         if self.esta_vacia():
@@ -47,6 +50,7 @@ class ListaEnlazada:
         self.tamaño += 1
 
     def eliminar(self, dato):
+        # eliminar primera ocurrencia del dato
         if self.esta_vacia():
             return False
 

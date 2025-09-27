@@ -1,13 +1,19 @@
 from app.utils.xml_parser import XMLParser
 from app.utils.xml_generator import XMLGenerator
+from app.utils.html_generator import HTMLGenerator
+from app.utils.graphviz_generator import GraphvizGenerator
 from app.models.simulacion import Simulacion
+from app.models.resultado import Resultado
 from app.tdas.lista_enlazada import ListaEnlazada
 
 
+# controlador principal del sistema de riego
 class SistemaRiego:
     def __init__(self):
         self.xml_parser = XMLParser()
         self.xml_generator = XMLGenerator()
+        self.html_generator = HTMLGenerator()
+        self.graphviz_generator = GraphvizGenerator()
         self.simulaciones = ListaEnlazada()
         self.invernadero_actual = None
 
@@ -22,10 +28,10 @@ class SistemaRiego:
     def cargar_configuracion(self, ruta_archivo):
         print("Cargando configuración desde archivo XML...")
 
-        exito, mensaje = self.xml_parser.cargar_archivo(ruta_archivo)
+        resultado = self.xml_parser.cargar_archivo(ruta_archivo)
 
-        if not exito:
-            print(f"Error al cargar archivo: {mensaje}")
+        if not resultado.es_exitoso():
+            print(f"Error al cargar archivo: {resultado.obtener_mensaje()}")
             return False
 
         print("Archivo cargado exitosamente")
@@ -63,10 +69,11 @@ class SistemaRiego:
             f"Plan de riego: {self.invernadero_actual.plan_riego.obtener_plan_original()}")
 
         simulacion = Simulacion(self.invernadero_actual)
-        exito, errores = simulacion.ejecutar_simulacion()
+        resultado = simulacion.ejecutar_simulacion()
 
-        if not exito:
+        if not resultado.es_exitoso():
             print("Error en la simulación:")
+            errores = resultado.obtener_data()
             for i in range(errores.obtener_tamaño()):
                 print(f"  - {errores.obtener(i)}")
             return False
@@ -105,19 +112,20 @@ class SistemaRiego:
         resultados = ultima_simulacion.obtener_resultados()
         registro_instrucciones = ultima_simulacion.obtener_registro_instrucciones()
 
-        exito, mensaje = self.xml_generator.generar_archivo_salida(
+        resultado = self.xml_generator.generar_archivo_salida(
             self.invernadero_actual,
             resultados,
             registro_instrucciones,
             ruta_salida
         )
 
-        if exito:
+        if resultado.es_exitoso():
             print(f"Archivo de salida generado: {ruta_salida}")
         else:
-            print(f"Error al generar archivo de salida: {mensaje}")
+            print(
+                f"Error al generar archivo de salida: {resultado.obtener_mensaje()}")
 
-        return exito
+        return resultado.es_exitoso()
 
     def mostrar_reporte_detallado(self):
         if self.simulaciones.obtener_tamaño() == 0:
@@ -171,9 +179,122 @@ class SistemaRiego:
 
         return resultado
 
+    def generar_reporte_html(self, ruta_reporte=None):
+        # Generar reporte HTML para el invernadero actual
+        if self.invernadero_actual is None:
+            print("No hay invernadero seleccionado")
+            return False
+
+        if self.simulaciones.obtener_tamaño() == 0:
+            print("No hay simulaciones para generar reporte")
+            return False
+
+        # Usar la última simulación
+        ultima_simulacion = self.simulaciones.obtener(
+            self.simulaciones.obtener_tamaño() - 1)
+        resultados = ultima_simulacion.obtener_resultados()
+        registro_instrucciones = ultima_simulacion.obtener_registro_instrucciones()
+
+        # Generar nombre de archivo si no se proporciona
+        if ruta_reporte is None:
+            nombre_archivo = self.invernadero_actual.nombre.replace(" ", "_")
+            ruta_reporte = f"ReporteInvernadero_{nombre_archivo}.html"
+
+        # Generar contenido HTML
+        contenido_html = self.html_generator.generar_reporte_invernadero(
+            self.invernadero_actual,
+            resultados,
+            registro_instrucciones
+        )
+
+        # Guardar archivo
+        resultado = self.html_generator.guardar_reporte(
+            contenido_html, ruta_reporte)
+
+        if resultado.es_exitoso():
+            print(f"Reporte HTML generado: {ruta_reporte}")
+        else:
+            print(
+                f"Error al generar reporte HTML: {resultado.obtener_mensaje()}")
+
+        return resultado.es_exitoso()
+
+    def generar_grafos_tdas(self, prefijo_archivo="grafo"):
+        # Generar gráficos de las TDAs utilizadas
+        if self.invernadero_actual is None:
+            print("No hay invernadero seleccionado")
+            return False
+
+        resultados = ListaEnlazada()
+
+        # Grafo del plan de riego
+        plan_riego = self.invernadero_actual.plan_riego
+        resultado1 = self.graphviz_generator.generar_grafo_plan_riego(
+            plan_riego, f"{prefijo_archivo}_plan_riego.dot")
+        resultados.insertar_al_final(resultado1)
+
+        # Grafo de la cola de riego (si tiene pasos pendientes)
+        resultado2 = self.graphviz_generator.generar_grafo_cola_riego(
+            plan_riego.secuencia_riego, f"{prefijo_archivo}_cola_riego.dot")
+        resultados.insertar_al_final(resultado2)
+
+        # Grafo del estado de los drones
+        resultado3 = self.graphviz_generator.generar_grafo_estado_drones(
+            self.invernadero_actual.drones, f"{prefijo_archivo}_drones.dot")
+        resultados.insertar_al_final(resultado3)
+
+        # Mostrar resultados
+        todos_exitosos = True
+        for i in range(resultados.obtener_tamaño()):
+            resultado = resultados.obtener(i)
+            print(resultado.obtener_mensaje())
+            if not resultado.es_exitoso():
+                todos_exitosos = False
+
+        if todos_exitosos:
+            print("Todos los gráficos Graphviz fueron generados exitosamente")
+            print("Para visualizar, use: dot -Tpng archivo.dot -o archivo.png")
+
+        return todos_exitosos
+
+    def generar_reporte_completo(self):
+        # Generar reporte completo: XML + HTML + Graphviz
+        if self.invernadero_actual is None:
+            print("No hay invernadero seleccionado")
+            return False
+
+        if self.simulaciones.obtener_tamaño() == 0:
+            print("No hay simulaciones ejecutadas")
+            return False
+
+        print("Generando reporte completo...")
+
+        # Generar archivo XML de salida
+        exito_xml = self.generar_archivo_salida("output/salida.xml")
+
+        # Generar reporte HTML
+        exito_html = self.generar_reporte_html()
+
+        # Generar gráficos Graphviz
+        exito_graphviz = self.generar_grafos_tdas()
+
+        if exito_xml and exito_html and exito_graphviz:
+            print("Reporte completo generado exitosamente")
+            print("Archivos generados:")
+            print("  - output/salida.xml (XML de salida)")
+            print(
+                f"  - ReporteInvernadero_{self.invernadero_actual.nombre.replace(' ', '_')}.html (Reporte HTML)")
+            print("  - grafo_*.dot (Gráficos Graphviz)")
+            return True
+        else:
+            print("Hubo errores al generar algunos componentes del reporte")
+            return False
+
     def limpiar_sistema(self):
         self.xml_parser = XMLParser()
         self.xml_generator = XMLGenerator()
+        self.html_generator = HTMLGenerator()
+        self.graphviz_generator = GraphvizGenerator()
         self.simulaciones.limpiar()
         self.invernadero_actual = None
         print("Sistema limpiado")

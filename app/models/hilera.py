@@ -1,6 +1,8 @@
 from app.tdas.lista_enlazada import ListaEnlazada
 from app.models.planta import Planta
 
+# hilera de plantas en el invernadero
+
 
 class Hilera:
     def __init__(self, numero_hilera):

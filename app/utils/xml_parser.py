@@ -4,9 +4,11 @@ from app.models.invernadero import Invernadero
 from app.models.hilera import Hilera
 from app.models.planta import Planta
 from app.models.plan_riego import PlanRiego
+from app.models.resultado import Resultado
 from app.tdas.lista_enlazada import ListaEnlazada
 
 
+#parseador de archivos XML de entrada
 class XMLParser:
     def __init__(self):
         self.drones = ListaEnlazada()
@@ -27,14 +29,14 @@ class XMLParser:
             # Parsear invernaderos
             self._parsear_invernaderos(root)
 
-            return True, "Archivo cargado exitosamente"
+            return Resultado(True, "Archivo cargado exitosamente")
 
         except ET.ParseError as e:
-            return False, f"Error de formato XML: {str(e)}"
+            return Resultado(False, f"Error de formato XML: {str(e)}")
         except FileNotFoundError:
-            return False, f"Archivo no encontrado: {ruta_archivo}"
+            return Resultado(False, f"Archivo no encontrado: {ruta_archivo}")
         except Exception as e:
-            return False, f"Error inesperado: {str(e)}"
+            return Resultado(False, f"Error inesperado: {str(e)}")
 
     def _parsear_drones(self, root):
         lista_drones = root.find('listaDrones')

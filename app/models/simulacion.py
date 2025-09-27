@@ -1,13 +1,16 @@
 from app.tdas.lista_enlazada import ListaEnlazada
 from app.models.invernadero import Invernadero
+from app.models.resultado import Resultado
 
 
+# registro de instrucciones en un momento dado
 class RegistroTiempo:
     def __init__(self, tiempo, instrucciones):
         self.tiempo = tiempo
         self.instrucciones = instrucciones
 
 
+# contenedor de instrucciones para todos los drones
 class InstruccionesDron:
     def __init__(self):
         self.instrucciones = ListaEnlazada()
@@ -23,12 +26,14 @@ class InstruccionesDron:
         return None
 
 
+# instruccion individual para un dron
 class InstruccionDron:
     def __init__(self, dron_id, instruccion):
         self.dron_id = dron_id
         self.instruccion = instruccion
 
 
+# resultado de un dron al finalizar simulacion
 class ResultadoDron:
     def __init__(self, id_dron, agua_utilizada, fertilizante_utilizado):
         self.id = id_dron
@@ -36,6 +41,7 @@ class ResultadoDron:
         self.fertilizante_utilizado = fertilizante_utilizado
 
 
+# resultados completos de la simulacion
 class ResultadosSimulacion:
     def __init__(self, tiempo_total, total_agua, total_fertilizante, resultados_drones, plan_ejecutado):
         self.tiempo_total = tiempo_total
@@ -45,29 +51,30 @@ class ResultadosSimulacion:
         self.plan_ejecutado = plan_ejecutado
 
 
+# simulador del sistema de riego robotico
 class Simulacion:
     def __init__(self, invernadero):
         self.invernadero = invernadero
         self.tiempo_actual = 0
         self.tiempo_total = 0
-        # Registro de instrucciones por tiempo
+        # registro de instrucciones por tiempo
         self.registro_instrucciones = ListaEnlazada()
         self.paso_actual_plan = None
         self.simulacion_completada = False
 
     def ejecutar_simulacion(self):
-        # Validar configuración antes de iniciar
+        # validar configuración antes de iniciar
         errores = self.invernadero.validar_configuracion()
         if errores.obtener_tamaño() > 0:
-            return False, errores
+            return Resultado(False, "Errores de validación encontrados", errores)
 
-        # Reiniciar estado
+        # reiniciar estado
         self.invernadero.reiniciar_estado()
         self.tiempo_actual = 0
         self.registro_instrucciones.limpiar()
         self.simulacion_completada = False
 
-        # Ejecutar simulación paso a paso
+        # ejecutar simulación paso a paso
         while self.invernadero.plan_riego.hay_pasos_pendientes():
             self.tiempo_actual += 1
             instrucciones_tiempo = self._ejecutar_paso_simulacion()
@@ -75,22 +82,24 @@ class Simulacion:
                 RegistroTiempo(self.tiempo_actual, instrucciones_tiempo)
             )
 
-        # Finalizar todos los drones
+        # finalizar todos los drones
         self._finalizar_drones()
 
         self.tiempo_total = self.tiempo_actual
         self.simulacion_completada = True
 
-        return True, []
+        # crear lista enlazada vacía para errores en lugar de array nativo
+        errores_vacios = ListaEnlazada()
+        return Resultado(True, "Simulación completada exitosamente", errores_vacios)
 
     def _ejecutar_paso_simulacion(self):
         instrucciones = InstruccionesDron()
 
-        # Obtener el siguiente paso del plan
+        # obtener el siguiente paso del plan
         if self.paso_actual_plan is None and self.invernadero.plan_riego.hay_pasos_pendientes():
             self.paso_actual_plan = self.invernadero.plan_riego.obtener_siguiente_paso()
 
-        # Generar instrucciones para cada dron
+        # generar instrucciones para cada dron
         for dron in self.invernadero.drones:
             if not dron.finalizado:
                 instruccion = self._generar_instruccion_dron(dron)
@@ -105,17 +114,17 @@ class Simulacion:
         hilera_objetivo = self.paso_actual_plan.hilera
         planta_objetivo = self.paso_actual_plan.planta
 
-        # Si este dron no es el asignado a la hilera objetivo, esperar
+        # si este dron no es el asignado a la hilera objetivo, esperar
         if dron.hilera_asignada.numero != hilera_objetivo:
             return "Esperar"
 
-        # Si el dron ya está en la posición correcta, regar
+        # si el dron ya está en la posición correcta, regar
         if dron.puede_regar(planta_objetivo):
             dron.regar_planta_actual()
-            self.paso_actual_plan = None  # Completar este paso
+            self.paso_actual_plan = None  # completar este paso
             return "Regar"
 
-        # Calcular movimiento necesario
+        # calcular movimiento necesario
         movimientos_necesarios = dron.obtener_posicion_objetivo(
             planta_objetivo)
 
@@ -157,7 +166,7 @@ class Simulacion:
                     instrucciones.agregar_instruccion(dron.id, "FIN")
                     drones_a_remover.insertar_al_final(dron)
 
-            # Remover drones finalizados
+            # remover drones finalizados
             for dron_a_remover in drones_a_remover:
                 for i in range(drones_activos.obtener_tamaño()):
                     if drones_activos.obtener(i).id == dron_a_remover.id:
@@ -173,7 +182,7 @@ class Simulacion:
         if not self.simulacion_completada:
             return None
 
-        # Calcular totales por dron
+        # calcular totales por dron
         resultados_drones = ListaEnlazada()
         total_agua = 0
         total_fertilizante = 0
@@ -207,7 +216,7 @@ class Simulacion:
         reporte.insertar_al_final(
             f"=== REPORTE DE SIMULACIÓN - {self.invernadero.nombre} ===\n")
 
-        # Información del plan
+        # información del plan
         reporte.insertar_al_final(
             f"Plan de riego ejecutado: {self.invernadero.plan_riego.obtener_plan_original()}")
         reporte.insertar_al_final(

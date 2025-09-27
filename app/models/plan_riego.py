@@ -2,6 +2,7 @@ from app.tdas.cola import Cola
 from app.tdas.lista_enlazada import ListaEnlazada
 
 
+# paso individual del plan de riego
 class PasoRiego:
     def __init__(self, hilera, planta, completado=False):
         self.hilera = hilera
@@ -9,6 +10,7 @@ class PasoRiego:
         self.completado = completado
 
 
+# plan de riego con secuencia de pasos
 class PlanRiego:
     def __init__(self):
         self.secuencia_riego = Cola()  # Cola con la secuencia de riego

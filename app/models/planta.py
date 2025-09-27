@@ -1,3 +1,4 @@
+# planta con requerimientos de agua y fertilizante
 class Planta:
     def __init__(self, posicion, litros_agua, gramos_fertilizante):
         self.posicion = posicion  # Posición en la hilera (1, 2, 3, ...)

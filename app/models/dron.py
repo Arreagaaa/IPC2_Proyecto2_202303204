@@ -1,3 +1,4 @@
+# dron autonomo para riego de plantas
 class Dron:
     def __init__(self, id_dron):
         self.id = id_dron  # Identificador del dron (DR01, DR02, etc.)

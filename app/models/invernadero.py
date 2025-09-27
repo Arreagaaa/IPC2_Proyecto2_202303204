@@ -4,6 +4,7 @@ from app.models.dron import Dron
 from app.models.plan_riego import PlanRiego
 
 
+# resumen de estadisticas de un dron
 class ResumenDron:
     def __init__(self, id_dron, agua_utilizada, fertilizante_utilizado, hilera_asignada):
         self.id = id_dron
@@ -12,6 +13,7 @@ class ResumenDron:
         self.hilera_asignada = hilera_asignada
 
 
+# invernadero con hileras, drones y plan de riego
 class Invernadero:
 
     def __init__(self, nombre="Invernadero"):
