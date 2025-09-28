@@ -1,0 +1,218 @@
+{% extends "base.html" %} {% block title %}Ayuda - GuateRiegos 2.0{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h4>
+          <i class="fas fa-question-circle me-2"></i>Guia de Uso del Sistema
+        </h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Como Empezar</h5>
+            <ol>
+              <li>
+                <strong>Cargar Configuracion:</strong> Subir archivo XML con
+                invernaderos
+              </li>
+              <li>
+                <strong>Seleccionar Invernadero:</strong> Elegir invernadero y
+                plan de riego
+              </li>
+              <li>
+                <strong>Ejecutar Simulacion:</strong> Ver resultados en tiempo
+                real
+              </li>
+              <li>
+                <strong>Generar Reportes:</strong> HTML, XML y graficos TDA
+              </li>
+            </ol>
+          </div>
+          <div class="col-md-6">
+            <h5>Formato XML</h5>
+            <p>El archivo debe contener:</p>
+            <ul>
+              <li>Configuracion de invernaderos</li>
+              <li>Hileras con plantas</li>
+              <li>Drones disponibles</li>
+              <li>Planes de riego predefinidos</li>
+            </ul>
+          </div>
+        </div>
+
+        <hr />
+
+        <h5>Funcionalidades Principales</h5>
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <div class="feature-box">
+              <div class="feature-icon">
+                <i class="fas fa-robot"></i>
+              </div>
+              <h6>Simulacion de Drones</h6>
+              <p>Sistema automatizado de riego con drones inteligentes</p>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="feature-box">
+              <div class="feature-icon">
+                <i class="fas fa-chart-bar"></i>
+              </div>
+              <h6>Reportes Detallados</h6>
+              <p>Estadisticas completas de tiempo, agua y fertilizante</p>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="feature-box">
+              <div class="feature-icon">
+                <i class="fas fa-project-diagram"></i>
+              </div>
+              <h6>Visualizacion TDA</h6>
+              <p>Graficos de estructuras de datos en tiempo real</p>
+            </div>
+          </div>
+        </div>
+
+        <hr />
+
+        <h5>Especificaciones Tecnicas</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Estructuras de Datos</h6>
+            <ul>
+              <li>
+                <strong>Lista Enlazada:</strong> Manejo de plantas e
+                invernaderos
+              </li>
+              <li><strong>Cola (FIFO):</strong> Planificacion de riego</li>
+              <li><strong>Pila (LIFO):</strong> Estado de drones</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6>Algoritmos</h6>
+            <ul>
+              <li>
+                <strong>Optimizacion:</strong> Minimiza tiempo total de riego
+              </li>
+              <li>
+                <strong>Distribucion:</strong> Asignacion eficiente de recursos
+              </li>
+              <li><strong>Tracking:</strong> Seguimiento en tiempo real</li>
+            </ul>
+          </div>
+        </div>
+
+        <hr />
+
+        <h5>Consejos de Uso</h5>
+        <div class="alert alert-info" role="alert">
+          <h6 class="alert-heading">Mejores Practicas</h6>
+          <ul class="mb-0">
+            <li>Verificar formato XML antes de subir archivos</li>
+            <li>Revisar configuracion de invernaderos y drones</li>
+            <li>Generar reportes despues de cada simulacion</li>
+            <li>Utilizar graficos TDA para analizar rendimiento</li>
+            <li>Descargar resultados XML para respaldo</li>
+          </ul>
+        </div>
+
+        <div class="alert alert-warning" role="alert">
+          <h6 class="alert-heading">Limitaciones</h6>
+          <ul class="mb-0">
+            <li>Un solo dron puede regar por vez</li>
+            <li>Tiempo minimo: 1 segundo por planta</li>
+            <li>Archivos XML maximo 10MB</li>
+            <li>Reportes se guardan temporalmente</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h4>
+          <i class="fas fa-user-graduate me-2"></i>Informacion del Estudiante
+        </h4>
+      </div>
+      <div class="card-body text-center">
+        <div class="student-avatar">
+          <i class="fas fa-user-circle fa-5x text-primary"></i>
+        </div>
+        <h5 class="mt-3">Christian Javier Rivas Arreaga</h5>
+        <p class="text-muted mb-3">Carne: 202303204</p>
+
+        <div class="course-info">
+          <h6><i class="fas fa-graduation-cap me-2"></i>Curso</h6>
+          <p>
+            Introduccion a la Programacion y Computacion 2<br />
+            <small class="text-muted">IPC2 - Seccion A</small>
+          </p>
+        </div>
+
+        <div class="project-info mt-4">
+          <h6><i class="fas fa-clipboard-list me-2"></i>Proyecto</h6>
+          <p>
+            Sistema de Riego Automatizado<br />
+            <small class="text-muted">Proyecto 2 - Release 3</small>
+          </p>
+        </div>
+
+        <div class="tech-stack mt-4">
+          <h6>Tecnologias</h6>
+          <div class="tech-badges">
+            <span class="badge bg-primary me-1">Python 3.13</span>
+            <span class="badge bg-success me-1">Flask</span>
+            <span class="badge bg-info me-1">Bootstrap 5</span>
+            <span class="badge bg-warning me-1">TDAs</span>
+            <span class="badge bg-danger me-1">XML</span>
+            <span class="badge bg-secondary">Graphviz</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5><i class="fas fa-envelope me-2"></i>Contacto y Soporte</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          <i class="fas fa-envelope me-2"></i>Email:
+          <a href="mailto:3563648950101@ingenieria.usac.edu.gt"
+            >3563648950101@ingenieria.usac.edu.gt</a
+          >
+        </p>
+        <p>
+          <i class="fas fa-university me-2"></i>Universidad San Carlos de
+          Guatemala
+        </p>
+        <p><i class="fas fa-building me-2"></i>Facultad de Ingenieria</p>
+        <p><i class="fas fa-calendar me-2"></i>Segundo Semestre 2024</p>
+
+        <hr />
+
+        <div class="text-center">
+          <small class="text-muted">
+            <i class="fas fa-code me-1"></i>
+            Desarrollando con ingenio
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Highlight codigo XML
+  document.addEventListener("DOMContentLoaded", function () {
+    // Aplicar highlight de sintaxis si esta disponible
+    if (typeof hljs !== "undefined") {
+      hljs.highlightAll();
+    }
+  });
+</script>
+{% endblock %}

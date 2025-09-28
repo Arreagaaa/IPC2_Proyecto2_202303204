@@ -1,0 +1,193 @@
+{% extends "base.html" %} {% block title %}Cargar Archivo - GuateRiegos 2.0{%
+endblock %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h4>
+          <i class="fas fa-upload me-2"></i>Cargar Archivo de Configuracion
+        </h4>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-4">
+          Selecciona un archivo XML con la configuracion de invernaderos, drones
+          y plantas. El archivo debe seguir el formato especificado en la
+          documentacion.
+        </p>
+
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+          <div class="mb-4">
+            <label for="file" class="form-label">Archivo XML</label>
+            <input
+              type="file"
+              class="form-control"
+              id="file"
+              name="file"
+              accept=".xml"
+              required
+            />
+            <div class="form-text">
+              Solo se permiten archivos .xml (maximo 16MB)
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a
+              href="{{ url_for('index') }}"
+              class="btn btn-outline-secondary me-md-2"
+            >
+              <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <button type="submit" class="btn btn-primary" id="uploadBtn">
+              <i class="fas fa-upload me-2"></i>Cargar Archivo
+            </button>
+          </div>
+        </form>
+
+        <div id="uploadProgress" class="mt-4" style="display: none">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Cargando archivo...</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              style="width: 0%"
+              id="progressBar"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5><i class="fas fa-info-circle me-2"></i>Formato del Archivo XML</h5>
+      </div>
+      <div class="card-body">
+        <p>El archivo XML debe contener:</p>
+        <ul>
+          <li>
+            <strong>Lista de Drones:</strong> Definicion de drones disponibles
+          </li>
+          <li>
+            <strong>Lista de Invernaderos:</strong> Configuracion de cada
+            invernadero
+          </li>
+          <li>
+            <strong>Plantas:</strong> Especificacion de agua y fertilizante por
+            planta
+          </li>
+          <li>
+            <strong>Asignacion de Drones:</strong> Que dron se asigna a cada
+            hilera
+          </li>
+          <li>
+            <strong>Planes de Riego:</strong> Secuencia de riego para cada
+            invernadero
+          </li>
+        </ul>
+
+        <div class="mt-3">
+          <button
+            class="btn btn-outline-info btn-sm"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#xmlExample"
+          >
+            <i class="fas fa-code me-1"></i>Ver Ejemplo
+          </button>
+        </div>
+
+        <div class="collapse mt-3" id="xmlExample">
+          <div class="bg-light p-3 rounded">
+            <pre><code>&lt;?xml version="1.0"?&gt;
+&lt;configuracion&gt;
+  &lt;listaDrones&gt;
+    &lt;dron id="1" nombre="DR01"/&gt;
+    &lt;dron id="2" nombre="DR02"/&gt;
+    &lt;dron id="3" nombre="DR03"/&gt;
+  &lt;/listaDrones&gt;
+  &lt;listaInvernaderos&gt;
+    &lt;invernadero nombre="Invernadero Zacapa"&gt;
+      &lt;numeroHileras&gt;3&lt;/numeroHileras&gt;
+      &lt;plantasXhilera&gt;4&lt;/plantasXhilera&gt;
+      &lt;listaPlantas&gt;
+        &lt;planta hilera="1" posicion="1" litrosAgua="1" gramosFertilizante="100"&gt;cipres&lt;/planta&gt;
+        ...
+      &lt;/listaPlantas&gt;
+      &lt;asignacionDrones&gt;
+        &lt;dron id="1" hilera="1"/&gt;
+        ...
+      &lt;/asignacionDrones&gt;
+      &lt;planesRiego&gt;
+        &lt;plan nombre="Semana 1"&gt;H1-P2, H2-P1, H2-P2, H3-P3, H1-P4&lt;/plan&gt;
+        ...
+      &lt;/planesRiego&gt;
+    &lt;/invernadero&gt;
+  &lt;/listaInvernaderos&gt;
+&lt;/configuracion&gt;</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document
+    .getElementById("uploadForm")
+    .addEventListener("submit", function (e) {
+      const fileInput = document.getElementById("file");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const progressDiv = document.getElementById("uploadProgress");
+      const progressBar = document.getElementById("progressBar");
+      const progressPercent = document.getElementById("progressPercent");
+
+      if (fileInput.files.length > 0) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin me-2"></i>Cargando...';
+        progressDiv.style.display = "block";
+
+        // Simular progreso de carga
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 15;
+          if (progress > 90) progress = 90;
+
+          progressBar.style.width = progress + "%";
+          progressPercent.textContent = Math.round(progress) + "%";
+
+          if (progress >= 90) {
+            clearInterval(interval);
+          }
+        }, 200);
+      }
+    });
+
+  // Validar archivo seleccionado
+  document.getElementById("file").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (file) {
+      const fileSize = file.size / 1024 / 1024; // MB
+      const maxSize = 16; // MB
+
+      if (fileSize > maxSize) {
+        alert(
+          "El archivo es demasiado grande. Maximo permitido: " + maxSize + "MB"
+        );
+        e.target.value = "";
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith(".xml")) {
+        alert("Por favor selecciona un archivo .xml");
+        e.target.value = "";
+        return;
+      }
+    }
+  });
+</script>
+{% endblock %}

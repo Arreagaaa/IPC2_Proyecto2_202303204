@@ -1,0 +1,181 @@
+{% extends "base.html" %} {% block title %}GuateRiegos 2.0 - Sistema de Riego
+Robotico{% endblock %} {% block content %}
+<div class="hero-section">
+  <div class="container">
+    <h1>GuateRiegos 2.0</h1>
+    <p class="lead">
+      Sistema Inteligente de Riego y Fertilizacion Robotica para Invernaderos
+    </p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row mb-5">
+    <div class="col-lg-4 mb-4">
+      <div class="feature-card fade-in">
+        <i class="fas fa-robot"></i>
+        <h4>Automatizacion Avanzada</h4>
+        <p>
+          Drones autonomos que riegan y fertilizan plantas siguiendo planes
+          optimizados.
+        </p>
+      </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+      <div class="feature-card fade-in">
+        <i class="fas fa-chart-line"></i>
+        <h4>Optimizacion Inteligente</h4>
+        <p>
+          Algoritmos que minimizan tiempo, agua y fertilizante para maxima
+          eficiencia.
+        </p>
+      </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+      <div class="feature-card fade-in">
+        <i class="fas fa-leaf"></i>
+        <h4>Cultivos Saludables</h4>
+        <p>
+          Cada planta recibe exactamente la cantidad de agua y nutrientes que
+          necesita.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h4><i class="fas fa-play me-2"></i>Como Usar el Sistema</h4>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-primary me-2">1</span>
+                <strong>Cargar Configuracion</strong>
+              </div>
+              <p class="mb-0 ms-4">
+                Sube un archivo XML con la configuracion de invernaderos, drones
+                y plantas.
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-primary me-2">2</span>
+                <strong>Seleccionar Invernadero</strong>
+              </div>
+              <p class="mb-0 ms-4">
+                Elige el invernadero y plan de riego para simular.
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-primary me-2">3</span>
+                <strong>Ejecutar Simulacion</strong>
+              </div>
+              <p class="mb-0 ms-4">
+                Observa como los drones ejecutan el plan de riego optimizado.
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="d-flex align-items-center mb-2">
+                <span class="badge bg-primary me-2">4</span>
+                <strong>Analizar Resultados</strong>
+              </div>
+              <p class="mb-0 ms-4">
+                Revisa estadisticas, reportes y graficos del proceso.
+              </p>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <a
+              href="{{ url_for('upload_file') }}"
+              class="btn btn-primary btn-lg me-3"
+            >
+              <i class="fas fa-upload me-2"></i>Comenzar
+            </a>
+            <a
+              href="{{ url_for('help_page') }}"
+              class="btn btn-outline-secondary btn-lg"
+            >
+              <i class="fas fa-question-circle me-2"></i>Ver Ayuda
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header">
+          <h4><i class="fas fa-info-circle me-2"></i>Estado del Sistema</h4>
+        </div>
+        <div class="card-body">
+          <div id="system-status">
+            <div class="stats-card mb-3">
+              <div class="stats-number" id="invernaderos-count">0</div>
+              <div class="stats-label">Invernaderos Cargados</div>
+            </div>
+            <div class="stats-card mb-3">
+              <div class="stats-number" id="simulaciones-count">0</div>
+              <div class="stats-label">Simulaciones Ejecutadas</div>
+            </div>
+            <div class="stats-card">
+              <div class="stats-number" id="invernadero-actual">-</div>
+              <div class="stats-label">Invernadero Actual</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header">
+          <h4><i class="fas fa-download me-2"></i>Acciones Rapidas</h4>
+        </div>
+        <div class="card-body">
+          <a
+            href="{{ url_for('generate_xml_output') }}"
+            class="btn btn-success w-100 mb-2"
+          >
+            <i class="fas fa-file-export me-2"></i>Generar XML Salida
+          </a>
+          <a
+            href="{{ url_for('download_reports') }}"
+            class="btn btn-info w-100 mb-2"
+          >
+            <i class="fas fa-download me-2"></i>Descargar Reportes
+          </a>
+          <a href="{{ url_for('simulation') }}" class="btn btn-warning w-100">
+            <i class="fas fa-robot me-2"></i>Ver Simulacion
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Cargar estado del sistema al iniciar
+  document.addEventListener("DOMContentLoaded", function () {
+    loadSystemStatus();
+    setInterval(loadSystemStatus, 5000); // Actualizar cada 5 segundos
+  });
+
+  function loadSystemStatus() {
+    fetch("/api/simulation_status")
+      .then((response) => response.json())
+      .then((data) => {
+        document.getElementById("invernaderos-count").textContent =
+          data.invernaderos_cargados;
+        document.getElementById("simulaciones-count").textContent =
+          data.simulaciones_ejecutadas;
+        document.getElementById("invernadero-actual").textContent =
+          data.invernadero_actual || "-";
+      })
+      .catch((error) => {
+        console.log("Error loading system status:", error);
+      });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,413 @@
+{% extends "base.html" %} {% block title %}Simulacion - GuateRiegos 2.0{%
+endblock %} {% block content %} {% if invernaderos %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h4><i class="fas fa-robot me-2"></i>Control de Simulacion</h4>
+      </div>
+      <div class="card-body">
+        <form id="simulationForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="invernadero" class="form-label"
+                >Seleccionar Invernadero</label
+              >
+              <select
+                class="form-select"
+                id="invernadero"
+                name="invernadero"
+                required
+              >
+                <option value="">-- Seleccionar --</option>
+                {% for inv in invernaderos %}
+                <option value="{{ inv.nombre }}">
+                  {{ inv.nombre }} ({{ inv.hileras }} hileras, {{ inv.drones }}
+                  drones, {{ inv.plantas_total }} plantas)
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="plan" class="form-label">Plan de Riego</label>
+              <select class="form-select" id="plan" name="plan" required>
+                <option value="">-- Seleccionar invernadero primero --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+              id="runSimulationBtn"
+            >
+              <i class="fas fa-play me-2"></i>Ejecutar Simulacion
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="simulationResults" class="card mt-4" style="display: none">
+      <div class="card-header">
+        <h4><i class="fas fa-chart-bar me-2"></i>Resultados de Simulacion</h4>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="stats-card">
+              <div class="stats-number" id="tiempoTotal">0</div>
+              <div class="stats-label">Tiempo Total (seg)</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stats-card">
+              <div class="stats-number" id="aguaTotal">0</div>
+              <div class="stats-label">Agua Total (L)</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stats-card">
+              <div class="stats-number" id="fertilizanteTotal">0</div>
+              <div class="stats-label">Fertilizante (g)</div>
+            </div>
+          </div>
+        </div>
+
+        <h5><i class="fas fa-robot me-2"></i>Eficiencia por Dron</h5>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Dron</th>
+                <th>Agua Utilizada (L)</th>
+                <th>Fertilizante (g)</th>
+                <th>Eficiencia</th>
+              </tr>
+            </thead>
+            <tbody id="dronesTable"></tbody>
+          </table>
+        </div>
+
+        <div class="mt-4">
+          <strong>Plan Ejecutado:</strong>
+          <div class="bg-light p-3 rounded mt-2">
+            <code id="planEjecutado"></code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h4><i class="fas fa-tools me-2"></i>Herramientas</h4>
+      </div>
+      <div class="card-body">
+        <button
+          class="btn btn-success w-100 mb-3"
+          id="generateHtmlBtn"
+          disabled
+        >
+          <i class="fas fa-file-alt me-2"></i>Generar Reporte HTML
+        </button>
+
+        <button class="btn btn-info w-100 mb-3" id="showTdaGraphBtn" disabled>
+          <i class="fas fa-project-diagram me-2"></i>Ver Graficos TDA
+        </button>
+
+        <a
+          href="{{ url_for('generate_xml_output') }}"
+          class="btn btn-warning w-100 mb-3"
+        >
+          <i class="fas fa-file-export me-2"></i>Generar XML Salida
+        </a>
+
+        <a
+          href="{{ url_for('download_reports') }}"
+          class="btn btn-outline-secondary w-100"
+        >
+          <i class="fas fa-download me-2"></i>Descargar Todo
+        </a>
+      </div>
+    </div>
+
+    <div class="card mt-4" id="tdaGraphCard" style="display: none">
+      <div class="card-header">
+        <h5><i class="fas fa-clock me-2"></i>Visualizar TDAs en Tiempo</h5>
+      </div>
+      <div class="card-body">
+        <div class="time-selector">
+          <label for="timeSlider">Tiempo:</label>
+          <input
+            type="range"
+            class="form-range"
+            id="timeSlider"
+            min="1"
+            max="10"
+            value="1"
+          />
+          <span id="timeValue">1s</span>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-3" id="generateTdaBtn">
+          <i class="fas fa-sync me-2"></i>Actualizar Graficos
+        </button>
+
+        <div id="graphLinks" style="display: none">
+          <h6>Graficos Generados:</h6>
+          <a
+            href="#"
+            id="planRiegoLink"
+            target="_blank"
+            class="btn btn-outline-primary btn-sm w-100 mb-2"
+            >Plan de Riego</a
+          >
+          <a
+            href="#"
+            id="colaRiegoLink"
+            target="_blank"
+            class="btn btn-outline-primary btn-sm w-100 mb-2"
+            >Cola de Riego</a
+          >
+          <a
+            href="#"
+            id="dronesLink"
+            target="_blank"
+            class="btn btn-outline-primary btn-sm w-100"
+            >Estado Drones</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5><i class="fas fa-list me-2"></i>Invernaderos Disponibles</h5>
+      </div>
+      <div class="card-body">
+        {% for inv in invernaderos %}
+        <div class="mb-3 p-3 bg-light rounded">
+          <h6 class="mb-1">{{ inv.nombre }}</h6>
+          <small class="text-muted">
+            {{ inv.hileras }} hileras • {{ inv.drones }} drones • {{
+            inv.plantas_total }} plantas
+          </small>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="text-center">
+  <div class="card">
+    <div class="card-body py-5">
+      <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+      <h3>No hay configuracion cargada</h3>
+      <p class="text-muted">
+        Primero debe cargar un archivo XML con la configuracion de invernaderos.
+      </p>
+      <a href="{{ url_for('upload_file') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-upload me-2"></i>Cargar Archivo
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div id="loadingOverlay" class="loading-overlay" style="display: none">
+  <div class="text-center">
+    <div class="spinner-border" role="status" style="width: 3rem; height: 3rem">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div class="mt-3">
+      <h5>Ejecutando simulacion...</h5>
+      <p class="text-muted">
+        Por favor espere mientras se procesa la simulacion
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  const invernaderosData = {{ invernaderos | tojson | safe }};
+  let currentSimulation = null;
+
+  // Actualizar planes cuando se selecciona invernadero
+  document.getElementById('invernadero').addEventListener('change', function() {
+      const selectedInvernadero = this.value;
+      const planSelect = document.getElementById('plan');
+
+      planSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+
+      if (selectedInvernadero) {
+          const inv = invernaderosData.find(i => i.nombre === selectedInvernadero);
+          if (inv && inv.planes) {
+              inv.planes.forEach(plan => {
+                  const option = document.createElement('option');
+                  option.value = plan.nombre;
+                  option.textContent = `${plan.nombre} (${plan.secuencia})`;
+                  planSelect.appendChild(option);
+              });
+          }
+      }
+  });
+
+  // Ejecutar simulacion
+  document.getElementById('simulationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const invernadero = formData.get('invernadero');
+
+      if (!invernadero) {
+          alert('Por favor selecciona un invernadero');
+          return;
+      }
+
+      showLoading(true);
+
+      fetch('/run_simulation', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              invernadero: invernadero
+          })
+      })
+      .then(response => response.json())
+      .then(data => {
+          showLoading(false);
+
+          if (data.success) {
+              currentSimulation = data.estadisticas;
+              displayResults(data.estadisticas);
+              enableTools();
+          } else {
+              alert('Error: ' + data.error);
+          }
+      })
+      .catch(error => {
+          showLoading(false);
+          alert('Error al ejecutar simulacion: ' + error);
+      });
+  });
+
+  // Generar reporte HTML
+  document.getElementById('generateHtmlBtn').addEventListener('click', function() {
+      if (!currentSimulation) return;
+
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando...';
+
+      fetch('/generate_html_report', {
+          method: 'POST'
+      })
+      .then(response => response.json())
+      .then(data => {
+          this.disabled = false;
+          this.innerHTML = '<i class="fas fa-file-alt me-2"></i>Generar Reporte HTML';
+
+          if (data.success) {
+              window.open(data.report_url, '_blank');
+          } else {
+              alert('Error: ' + data.error);
+          }
+      })
+      .catch(error => {
+          this.disabled = false;
+          this.innerHTML = '<i class="fas fa-file-alt me-2"></i>Generar Reporte HTML';
+          alert('Error: ' + error);
+      });
+  });
+
+  // Mostrar controles de TDA
+  document.getElementById('showTdaGraphBtn').addEventListener('click', function() {
+      const card = document.getElementById('tdaGraphCard');
+      card.style.display = card.style.display === 'none' ? 'block' : 'none';
+
+      if (currentSimulation) {
+          document.getElementById('timeSlider').max = currentSimulation.tiempo_total;
+      }
+  });
+
+  // Generar graficos TDA
+  document.getElementById('generateTdaBtn').addEventListener('click', function() {
+      const tiempo = document.getElementById('timeSlider').value;
+
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generando...';
+
+      fetch('/generate_tda_graph', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              tiempo: tiempo
+          })
+      })
+      .then(response => response.json())
+      .then(data => {
+          this.disabled = false;
+          this.innerHTML = '<i class="fas fa-sync me-2"></i>Actualizar Graficos';
+
+          if (data.success) {
+              document.getElementById('planRiegoLink').href = data.graphs.plan_riego;
+              document.getElementById('colaRiegoLink').href = data.graphs.cola_riego;
+              document.getElementById('dronesLink').href = data.graphs.drones;
+              document.getElementById('graphLinks').style.display = 'block';
+          } else {
+              alert('Error: ' + data.error);
+          }
+      })
+      .catch(error => {
+          this.disabled = false;
+          this.innerHTML = '<i class="fas fa-sync me-2"></i>Actualizar Graficos';
+          alert('Error: ' + error);
+      });
+  });
+
+  // Actualizar valor del slider
+  document.getElementById('timeSlider').addEventListener('input', function() {
+      document.getElementById('timeValue').textContent = this.value + 's';
+  });
+
+  function displayResults(stats) {
+      document.getElementById('tiempoTotal').textContent = stats.tiempo_total;
+      document.getElementById('aguaTotal').textContent = stats.agua_total;
+      document.getElementById('fertilizanteTotal').textContent = stats.fertilizante_total;
+      document.getElementById('planEjecutado').textContent = stats.plan_ejecutado;
+
+      const tbody = document.getElementById('dronesTable');
+      tbody.innerHTML = '';
+
+      stats.resultados_drones.forEach(dron => {
+          const row = tbody.insertRow();
+          const eficiencia = ((dron.agua + dron.fertilizante / 100) / stats.tiempo_total * 100).toFixed(1);
+
+          row.innerHTML = `
+              <td><strong>${dron.id}</strong></td>
+              <td>${dron.agua}</td>
+              <td>${dron.fertilizante}</td>
+              <td><span class="badge bg-success">${eficiencia}%</span></td>
+          `;
+      });
+
+      document.getElementById('simulationResults').style.display = 'block';
+  }
+
+  function enableTools() {
+      document.getElementById('generateHtmlBtn').disabled = false;
+      document.getElementById('showTdaGraphBtn').disabled = false;
+  }
+
+  function showLoading(show) {
+      document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+  }
+</script>
+{% endblock %}
