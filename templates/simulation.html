@@ -157,28 +157,44 @@ endblock %} {% block content %} {% if invernaderos %}
         </button>
 
         <div id="graphLinks" style="display: none">
-          <h6>Graficos Generados:</h6>
-          <a
-            href="#"
-            id="planRiegoLink"
-            target="_blank"
-            class="btn btn-outline-primary btn-sm w-100 mb-2"
-            >Plan de Riego</a
-          >
-          <a
-            href="#"
-            id="colaRiegoLink"
-            target="_blank"
-            class="btn btn-outline-primary btn-sm w-100 mb-2"
-            >Cola de Riego</a
-          >
-          <a
-            href="#"
-            id="dronesLink"
-            target="_blank"
-            class="btn btn-outline-primary btn-sm w-100"
-            >Estado Drones</a
-          >
+          <h6>Visualizaciones TDA Generadas:</h6>
+          <div class="row">
+            <div class="col-12 mb-2">
+              <a
+                href="#"
+                id="planRiegoLink"
+                target="_blank"
+                class="btn btn-outline-primary btn-sm w-100"
+              >
+                <i class="fas fa-list-ol me-2"></i>Plan de Riego (HTML)
+              </a>
+            </div>
+            <div class="col-12 mb-2">
+              <a
+                href="#"
+                id="colaRiegoLink"
+                target="_blank"
+                class="btn btn-outline-primary btn-sm w-100"
+              >
+                <i class="fas fa-stream me-2"></i>Cola de Riego (HTML)
+              </a>
+            </div>
+            <div class="col-12 mb-2">
+              <a
+                href="#"
+                id="dronesLink"
+                target="_blank"
+                class="btn btn-outline-primary btn-sm w-100"
+              >
+                <i class="fas fa-helicopter me-2"></i>Estado Drones (HTML)
+              </a>
+            </div>
+          </div>
+          <hr>
+          <small class="text-muted">
+            <i class="fas fa-info-circle"></i>
+            Los archivos PNG y DOT también están disponibles en la visualización completa.
+          </small>
         </div>
       </div>
     </div>
@@ -335,7 +351,7 @@ endblock %} {% block content %} {% if invernaderos %}
       }
   });
 
-  // Generar graficos TDA
+  // Generar graficos TDA con visualización completa
   document.getElementById('generateTdaBtn').addEventListener('click', function() {
       const tiempo = document.getElementById('timeSlider').value;
 
@@ -357,10 +373,28 @@ endblock %} {% block content %} {% if invernaderos %}
           this.innerHTML = '<i class="fas fa-sync me-2"></i>Actualizar Graficos';
 
           if (data.success) {
-              document.getElementById('planRiegoLink').href = data.graphs.plan_riego;
-              document.getElementById('colaRiegoLink').href = data.graphs.cola_riego;
-              document.getElementById('dronesLink').href = data.graphs.drones;
+              // Actualizar enlaces a visualizaciones HTML
+              document.getElementById('planRiegoLink').href = data.visualization.plan_riego_html;
+              document.getElementById('colaRiegoLink').href = data.visualization.cola_riego_html;
+              document.getElementById('dronesLink').href = data.visualization.drones_html;
+              
+              // Mostrar enlaces y botón para página de visualización completa
               document.getElementById('graphLinks').style.display = 'block';
+              
+              // Agregar botón para ver página completa de visualización
+              const viewFullBtn = document.getElementById('viewFullVisualizationBtn') || 
+                  document.createElement('button');
+              if (!document.getElementById('viewFullVisualizationBtn')) {
+                  viewFullBtn.id = 'viewFullVisualizationBtn';
+                  viewFullBtn.className = 'btn btn-success w-100 mt-2';
+                  viewFullBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Ver Visualización Completa';
+                  document.getElementById('graphLinks').appendChild(viewFullBtn);
+              }
+              
+              viewFullBtn.onclick = function() {
+                  window.open(`/visualize_tda/${tiempo}`, '_blank');
+              };
+              
           } else {
               alert('Error: ' + data.error);
           }

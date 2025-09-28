@@ -192,7 +192,7 @@ def generate_html_report():
 
 @app.route('/generate_tda_graph', methods=['POST'])
 def generate_tda_graph():
-    # generar grafico de TDAs en tiempo t
+    # generar grafico de TDAs en tiempo t con PNG y HTML
     data = request.get_json()
     tiempo_t = data.get('tiempo', 1)
 
@@ -206,22 +206,76 @@ def generate_tda_graph():
     except:
         tiempo_t = 1
 
-    # generar graficos
-    prefix = f"static/graphs/tiempo_{tiempo_t}"
-    success = sistema.generar_grafos_tdas(prefix)
+    # generar visualización completa para tiempo t
+    success = sistema.visualizar_tdas_en_tiempo(tiempo_t)
 
     if success:
+        # nombres de archivos generados
+        prefix = f"visualization_t{tiempo_t}"
         return jsonify({
             'success': True,
-            'graphs': {
-                'plan_riego': f"/{prefix}_plan_riego.dot",
-                'cola_riego': f"/{prefix}_cola_riego.dot",
-                'drones': f"/{prefix}_drones.dot"
+            'visualization': {
+                'plan_riego_png': f"/static/graphs/{prefix}_plan_riego.png",
+                'cola_riego_png': f"/static/graphs/{prefix}_cola_riego.png", 
+                'drones_png': f"/static/graphs/{prefix}_drones.png",
+                'tiempo_t_png': f"/static/graphs/{prefix}_tiempo_{tiempo_t}.png",
+                'plan_riego_html': f"/static/graphs/{prefix}_plan_riego.html",
+                'cola_riego_html': f"/static/graphs/{prefix}_cola_riego.html",
+                'drones_html': f"/static/graphs/{prefix}_drones.html",
+                'tiempo_t_html': f"/static/graphs/{prefix}_tiempo_{tiempo_t}.html"
             },
             'tiempo': tiempo_t
         })
     else:
-        return jsonify({'error': 'Error al generar los gráficos'}), 500
+        return jsonify({'error': 'Error al generar la visualización de TDAs'}), 500
+
+
+@app.route('/visualize_tda/<tiempo_t>')
+def visualize_tda_at_time(tiempo_t):
+    # pagina de visualización de TDAs en tiempo específico
+    try:
+        tiempo = int(tiempo_t)
+    except:
+        flash('Tiempo inválido', 'error')
+        return redirect(url_for('simulation'))
+
+    if sistema.simulaciones.obtener_tamaño() == 0:
+        flash('No hay simulaciones ejecutadas', 'error')
+        return redirect(url_for('simulation'))
+
+    # obtener archivos de visualización disponibles
+    archivos_disponibles = sistema.obtener_archivos_visualizacion_disponibles()
+    
+    # convertir a lista para template
+    archivos_list = []
+    for i in range(archivos_disponibles.obtener_tamaño()):
+        archivo = archivos_disponibles.obtener(i)
+        if f"t{tiempo}" in archivo:
+            archivos_list.append(archivo)
+
+    return render_template('visualization.html', 
+                         tiempo=tiempo, 
+                         archivos=archivos_list,
+                         invernadero=sistema.invernadero_actual.nombre if sistema.invernadero_actual else None)
+
+
+@app.route('/view_tda_graph/<graph_name>')
+def view_tda_graph(graph_name):
+    # mostrar gráfico específico de TDA
+    html_path = f"static/graphs/{graph_name}"
+    
+    if not os.path.exists(html_path):
+        flash('Archivo de visualización no encontrado', 'error')
+        return redirect(url_for('simulation'))
+    
+    # leer contenido del archivo HTML
+    try:
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        return html_content
+    except Exception as e:
+        flash(f'Error al cargar visualización: {e}', 'error')
+        return redirect(url_for('simulation'))
 
 
 @app.route('/generate_xml_output')

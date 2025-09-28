@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Visualización TDAs - Tiempo {{ tiempo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-project-diagram"></i> Visualización de TDAs</h4>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge badge-primary">Tiempo t = {{ tiempo }}</span>
+                        {% if invernadero %}
+                        <span class="badge badge-success">{{ invernadero }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if archivos %}
+                    <div class="row">
+                        {% for archivo in archivos %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        {% if 'plan_riego' in archivo %}
+                                        <i class="fas fa-list-ol"></i> Plan de Riego
+                                        {% elif 'cola_riego' in archivo %}
+                                        <i class="fas fa-stream"></i> Cola de Riego
+                                        {% elif 'drones' in archivo %}
+                                        <i class="fas fa-helicopter"></i> Estado Drones
+                                        {% elif 'tiempo_' in archivo %}
+                                        <i class="fas fa-clock"></i> Estado en Tiempo t
+                                        {% else %}
+                                        <i class="fas fa-diagram-project"></i> TDA
+                                        {% endif %}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('view_tda_graph', graph_name=archivo) }}" 
+                                           class="btn btn-primary btn-sm" 
+                                           target="_blank">
+                                            <i class="fas fa-eye"></i> Ver Visualización
+                                        </a>
+                                        <a href="/static/graphs/{{ archivo.replace('.html', '.png') }}" 
+                                           class="btn btn-outline-secondary btn-sm" 
+                                           target="_blank">
+                                            <i class="fas fa-image"></i> Ver PNG
+                                        </a>
+                                        <a href="/static/graphs/{{ archivo.replace('.html', '.dot') }}" 
+                                           class="btn btn-outline-info btn-sm" 
+                                           target="_blank">
+                                            <i class="fas fa-code"></i> Ver DOT
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No hay visualizaciones disponibles para el tiempo {{ tiempo }}.
+                        <br>
+                        <small>Genere primero las visualizaciones desde la página de simulación.</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('simulation') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver a Simulación
+                        </a>
+                        <div class="btn-group">
+                            <button class="btn btn-success" onclick="generateVisualization()">
+                                <i class="fas fa-sync-alt"></i> Regenerar
+                            </button>
+                            <div class="btn-group" role="group">
+                                <button id="btnGroupDrop1" type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown">
+                                    <i class="fas fa-clock"></i> Cambiar Tiempo
+                                </button>
+                                <div class="dropdown-menu">
+                                    {% for t in range(1, 11) %}
+                                    <a class="dropdown-item {% if t == tiempo %}active{% endif %}" 
+                                       href="{{ url_for('visualize_tda_at_time', tiempo_t=t) }}">
+                                        Tiempo {{ t }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generateVisualization() {
+    const tiempo = {{ tiempo }};
+    
+    // mostrar indicador de carga
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+    btn.disabled = true;
+    
+    fetch('/generate_tda_graph', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            tiempo: tiempo
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // recargar página para mostrar nuevas visualizaciones
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión: ' + error);
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

@@ -219,8 +219,11 @@ class SistemaRiego:
 
         return resultado.es_exitoso()
 
-    def generar_grafos_tdas(self, prefijo_archivo="grafo"):
-        # Generar gráficos de las TDAs utilizadas
+    def generar_grafos_tdas(self, prefijo_archivo="grafo", tiempo_t=None):
+        """
+        Generar gráficos de las TDAs utilizadas con conversión PNG y HTML
+        tiempo_t: momento específico para visualizar el estado de las TDAs
+        """
         if self.invernadero_actual is None:
             print("No hay invernadero seleccionado")
             return False
@@ -233,7 +236,7 @@ class SistemaRiego:
             plan_riego, f"{prefijo_archivo}_plan_riego.dot")
         resultados.insertar_al_final(resultado1)
 
-        # Grafo de la cola de riego (si tiene pasos pendientes)
+        # Grafo de la cola de riego
         resultado2 = self.graphviz_generator.generar_grafo_cola_riego(
             plan_riego.secuencia_riego, f"{prefijo_archivo}_cola_riego.dot")
         resultados.insertar_al_final(resultado2)
@@ -243,19 +246,94 @@ class SistemaRiego:
             self.invernadero_actual.drones, f"{prefijo_archivo}_drones.dot")
         resultados.insertar_al_final(resultado3)
 
-        # Mostrar resultados
+        # Generar visualización de TDAs en tiempo_t si se especifica
+        if tiempo_t is not None:
+            resultado4 = self.graphviz_generator.generar_visualizacion_tdas_tiempo_t(
+                self.invernadero_actual, tiempo_t, f"{prefijo_archivo}_tiempo_{tiempo_t}")
+            resultados.insertar_al_final(resultado4)
+
+        # Convertir DOT a PNG y generar HTML
+        archivos_generados = ListaEnlazada()
         todos_exitosos = True
+        
         for i in range(resultados.obtener_tamaño()):
             resultado = resultados.obtener(i)
             print(resultado.obtener_mensaje())
-            if not resultado.es_exitoso():
+            
+            if resultado.es_exitoso():
+                # Obtener nombre del archivo DOT
+                archivo_dot = resultado.obtener_mensaje().split(": ")[-1]
+                
+                # Convertir a PNG
+                archivo_png = archivo_dot.replace(".dot", ".png")
+                resultado_png = self.graphviz_generator.convertir_dot_a_png(archivo_dot, archivo_png)
+                
+                if resultado_png.es_exitoso():
+                    archivos_generados.insertar_al_final(archivo_png)
+                    
+                    # Generar página HTML de visualización
+                    nombre_base = archivo_dot.replace(".dot", "")
+                    resultado_html = self.graphviz_generator.generar_pagina_visualizacion_html(
+                        archivo_png, f"{nombre_base}.html", nombre_base)
+                    
+                    if not resultado_html.es_exitoso():
+                        todos_exitosos = False
+                        print(f"Error generando HTML: {resultado_html.obtener_mensaje()}")
+                else:
+                    todos_exitosos = False
+                    print(f"Error convirtiendo PNG: {resultado_png.obtener_mensaje()}")
+            else:
                 todos_exitosos = False
 
         if todos_exitosos:
-            print("Todos los gráficos Graphviz fueron generados exitosamente")
-            print("Para visualizar, use: dot -Tpng archivo.dot -o archivo.png")
+            print("Todos los gráficos fueron generados exitosamente con conversión PNG y HTML")
+        else:
+            print("Algunos gráficos tuvieron errores durante la generación")
 
         return todos_exitosos
+
+    def visualizar_tdas_en_tiempo(self, tiempo_t):
+        """
+        Visualizar el estado de las TDAs en un momento específico t
+        Requerido por el enunciado para mostrar el estado de estructuras de datos
+        """
+        if self.invernadero_actual is None:
+            print(f"No hay invernadero seleccionado para visualizar en tiempo {tiempo_t}")
+            return False
+
+        print(f"Generando visualización de TDAs en tiempo t={tiempo_t}")
+        
+        # Generar archivos de visualización
+        prefijo = f"visualization_t{tiempo_t}"
+        exito = self.generar_grafos_tdas(prefijo, tiempo_t)
+        
+        if exito:
+            print(f"Visualización generada exitosamente para tiempo t={tiempo_t}")
+            print(f"Archivos generados en: static/graphs/{prefijo}_*.png")
+            print(f"Páginas HTML en: static/graphs/{prefijo}_*.html")
+        else:
+            print(f"Error generando visualización para tiempo t={tiempo_t}")
+            
+        return exito
+
+    def obtener_archivos_visualizacion_disponibles(self):
+        """
+        Obtener lista de archivos de visualización disponibles
+        Para uso en la interfaz Flask
+        """
+        import os
+        archivos = ListaEnlazada()
+        
+        try:
+            directorio_grafos = "static/graphs"
+            if os.path.exists(directorio_grafos):
+                for archivo in os.listdir(directorio_grafos):
+                    if archivo.endswith('.html'):
+                        archivos.insertar_al_final(archivo)
+        except Exception as e:
+            print(f"Error listando archivos de visualización: {e}")
+            
+        return archivos
 
     def generar_reporte_completo(self):
         # Generar reporte completo: XML + HTML + Graphviz
