@@ -7,6 +7,8 @@ class Dron:
         self.agua_utilizada = 0  # Litros de agua utilizados
         self.fertilizante_utilizado = 0  # Gramos de fertilizante utilizados
         self.finalizado = False  # Estado de finalización
+        # Capacidad máxima de agua en litros (valor por defecto)
+        self.capacidad_agua = 50
 
     def asignar_hilera(self, hilera):
         self.hilera_asignada = hilera
@@ -14,7 +16,7 @@ class Dron:
     @property
     def nombre(self):
         return getattr(self, '_nombre', self.id)
-    
+
     @nombre.setter
     def nombre(self, valor):
         self._nombre = valor

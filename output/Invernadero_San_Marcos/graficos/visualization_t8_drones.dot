@@ -1,0 +1,15 @@
+digraph Drones {
+    rankdir=TB;
+    node [shape=ellipse, style=filled, fillcolor=lightcoral];
+    edge [color=darkgreen];
+
+    "Sistema_Drones" [label="Sistema de Drones", shape=box, fillcolor=yellow];
+    "Dron0" [label="Dron 1\nHilera: Hilera H1 - 3 plantas - Dron: 1\nEstado: Inactivo", fillcolor=lightcoral];
+    "Sistema_Drones" -> "Dron0";
+    "Dron1" [label="Dron 2\nHilera: Hilera H2 - 3 plantas - Dron: 2\nEstado: Inactivo", fillcolor=lightcoral];
+    "Sistema_Drones" -> "Dron1";
+    "Dron2" [label="Dron 3\nHilera: Hilera H3 - 3 plantas - Dron: 3\nEstado: Inactivo", fillcolor=lightcoral];
+    "Sistema_Drones" -> "Dron2";
+    "Dron3" [label="Dron 4\nHilera: Hilera H4 - 3 plantas - Dron: 4\nEstado: Inactivo", fillcolor=lightcoral];
+    "Sistema_Drones" -> "Dron3";
+}

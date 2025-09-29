@@ -303,38 +303,7 @@ def generate_xml_output():
         return redirect(url_for('simulation'))
 
 
-@app.route('/download_reports')
-def download_reports():
-    # descargar todos los reportes generados
-    if sistema.simulaciones.obtener_tamaño() == 0:
-        flash('No hay reportes para descargar', 'warning')
-        return redirect(url_for('simulation'))
-
-    # crear zip temporal con todos los reportes
-    temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-    nombre_invernadero = sistema.invernadero_actual.nombre.replace(' ', '_')
-
-    with zipfile.ZipFile(temp_zip.name, 'w') as zipf:
-        # agregar reporte HTML
-        html_path = f"output/{nombre_invernadero}/ReporteInvernadero_{nombre_invernadero}.html"
-        if os.path.exists(html_path):
-            zipf.write(
-                html_path, f"ReporteInvernadero_{nombre_invernadero}.html")
-
-        # agregar XML de salida
-        xml_path = f'output/{nombre_invernadero}/salida.xml'
-        if os.path.exists(xml_path):
-            zipf.write(xml_path, 'salida.xml')
-
-        # agregar graficos desde estructura organizada
-        graficos_dir = f'output/{nombre_invernadero}/graficos'
-        if os.path.exists(graficos_dir):
-            for file in os.listdir(graficos_dir):
-                file_path = os.path.join(graficos_dir, file)
-                if os.path.isfile(file_path):
-                    zipf.write(file_path, f"graficos/{file}")
-
-    return send_file(temp_zip.name, as_attachment=True, download_name=f'reportes_{nombre_invernadero}.zip')
+# Función download_reports eliminada por solicitud del usuario
 
 
 @app.route('/output/<path:filename>')

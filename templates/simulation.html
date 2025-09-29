@@ -125,12 +125,7 @@ endblock %} {% block content %} {% if invernaderos %}
           <i class="fas fa-file-export me-2"></i>Generar XML Salida
         </a>
 
-        <a
-          href="{{ url_for('download_reports') }}"
-          class="btn btn-outline-secondary w-100"
-        >
-          <i class="fas fa-download me-2"></i>Descargar Todo
-        </a>
+        <!-- Botón de descarga eliminado por solicitud del usuario -->
       </div>
     </div>
 
@@ -189,11 +184,21 @@ endblock %} {% block content %} {% if invernaderos %}
                 <i class="fas fa-helicopter me-2"></i>Estado Drones (HTML)
               </a>
             </div>
+            <div class="col-12 mb-2">
+              <a
+                href="#"
+                id="tiempoTLink"
+                target="_blank"
+                class="btn btn-outline-success btn-sm w-100"
+              >
+                <i class="fas fa-clock me-2"></i>Estado Sistema Tiempo t (HTML)
+              </a>
+            </div>
           </div>
-          <hr>
+          <hr />
           <small class="text-muted">
             <i class="fas fa-info-circle"></i>
-            Los archivos PNG y DOT también están disponibles en la visualización completa.
+            Los archivos PNG y DOT también están disponibles por separado.
           </small>
         </div>
       </div>
@@ -377,24 +382,13 @@ endblock %} {% block content %} {% if invernaderos %}
               document.getElementById('planRiegoLink').href = data.visualization.plan_riego_html;
               document.getElementById('colaRiegoLink').href = data.visualization.cola_riego_html;
               document.getElementById('dronesLink').href = data.visualization.drones_html;
-              
+              document.getElementById('tiempoTLink').href = data.visualization.tiempo_t_html;
+
               // Mostrar enlaces y botón para página de visualización completa
               document.getElementById('graphLinks').style.display = 'block';
-              
-              // Agregar botón para ver página completa de visualización
-              const viewFullBtn = document.getElementById('viewFullVisualizationBtn') || 
-                  document.createElement('button');
-              if (!document.getElementById('viewFullVisualizationBtn')) {
-                  viewFullBtn.id = 'viewFullVisualizationBtn';
-                  viewFullBtn.className = 'btn btn-success w-100 mt-2';
-                  viewFullBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Ver Visualización Completa';
-                  document.getElementById('graphLinks').appendChild(viewFullBtn);
-              }
-              
-              viewFullBtn.onclick = function() {
-                  window.open(`/visualize_tda/${tiempo}`, '_blank');
-              };
-              
+
+              // Enlaces individuales ya disponibles arriba
+
           } else {
               alert('Error: ' + data.error);
           }

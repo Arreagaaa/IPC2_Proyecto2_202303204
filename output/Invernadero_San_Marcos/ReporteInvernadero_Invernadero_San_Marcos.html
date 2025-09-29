@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang='es'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Reporte - Invernadero San Marcos</title>
+
+        <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 30px; }
+        .fecha { text-align: right; color: #7f8c8d; font-style: italic; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .info-table td { padding: 8px 12px; border: 1px solid #ddd; }
+        .info-table td:first-child { background-color: #ecf0f1; font-weight: bold; width: 200px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 10px; text-align: center; border: 1px solid #ddd; }
+        th { background-color: #3498db; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        tr:hover { background-color: #e8f4f8; }
+        .estadisticas { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat-box { background-color: #3498db; color: white; padding: 20px; border-radius: 8px; text-align: center; min-width: 150px; }
+        .stat-number { font-size: 2em; font-weight: bold; }
+        .stat-label { font-size: 0.9em; margin-top: 5px; }
+        </style>
+        
+</head>
+<body>
+<div class='container'>
+<h1>Reporte de Simulación - Invernadero San Marcos</h1>
+<p class='fecha'>Generado el: 28/09/2025 20:33:18</p>
+<h2>Información General</h2>
+<table class='info-table'>
+<tr><td><strong>Nombre:</strong></td><td>Invernadero San Marcos</td></tr>
+<tr><td><strong>Número de hileras:</strong></td><td>4</td></tr>
+<tr><td><strong>Drones asignados:</strong></td><td>4</td></tr>
+<tr><td><strong>Plan de riego:</strong></td><td>H2-P1, H4-P1, H1-P2, H3-P2, H2-P2, H4-P2, H1-P2, H3-P2, H2-P3, H4-P3</td></tr>
+</table>
+<h2>Configuración de Plantas</h2>
+<table>
+<thead><tr><th>Hilera</th><th>Posición</th><th>Tipo de Planta</th><th>Agua (L)</th><th>Fertilizante (g)</th></tr></thead>
+<tbody>
+<tr><td>H1</td><td>P1</td><td>matilisguate</td><td>3.0</td><td>200.0</td></tr>
+<tr><td>H1</td><td>P2</td><td>ciprés</td><td>4.0</td><td>100.0</td></tr>
+<tr><td>H1</td><td>P3</td><td>matilisguate</td><td>3.0</td><td>200.0</td></tr>
+<tr><td>H2</td><td>P1</td><td>ciprés italiano</td><td>1.0</td><td>25.0</td></tr>
+<tr><td>H2</td><td>P2</td><td>ciprés de tarout</td><td>2.0</td><td>125.0</td></tr>
+<tr><td>H2</td><td>P3</td><td>ciprés italiano</td><td>1.0</td><td>25.0</td></tr>
+<tr><td>H3</td><td>P1</td><td>matilisguate</td><td>3.0</td><td>200.0</td></tr>
+<tr><td>H3</td><td>P2</td><td>ciprés</td><td>4.0</td><td>100.0</td></tr>
+<tr><td>H3</td><td>P3</td><td>matilisguate</td><td>3.0</td><td>200.0</td></tr>
+<tr><td>H4</td><td>P1</td><td>ciprés italiano</td><td>1.0</td><td>25.0</td></tr>
+<tr><td>H4</td><td>P2</td><td>ciprés de tarout</td><td>2.0</td><td>125.0</td></tr>
+<tr><td>H4</td><td>P3</td><td>ciprés italiano</td><td>1.0</td><td>25.0</td></tr>
+</tbody></table>
+
+<h2>Asignación de Drones</h2>
+<table>
+<thead><tr><th>Hilera</th><th>Dron</th></tr></thead>
+<tbody>
+<tr><td>H1</td><td>DR01</td></tr>
+<tr><td>H2</td><td>DR02</td></tr>
+<tr><td>H3</td><td>DR03</td></tr>
+<tr><td>H4</td><td>DR04</td></tr>
+</tbody></table>
+
+<h2>Resultados de Simulación</h2>
+<div class='estadisticas'>
+<div class='stat-box'><div class='stat-number'>22</div><div class='stat-label'>Segundos</div></div>
+<div class='stat-box'><div class='stat-number'>15.0</div><div class='stat-label'>Litros de Agua</div></div>
+<div class='stat-box'><div class='stat-number'>525.0</div><div class='stat-label'>Gramos de Fertilizante</div></div>
+</div>
+<h3>Resultados por Dron</h3>
+<table>
+<thead><tr><th>Dron</th><th>Agua Utilizada (L)</th><th>Fertilizante Utilizado (g)</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>4.0</td><td>100.0</td></tr>
+<tr><td>2</td><td>4.0</td><td>175.0</td></tr>
+<tr><td>3</td><td>4.0</td><td>100.0</td></tr>
+<tr><td>4</td><td>3.0</td><td>150.0</td></tr>
+</tbody></table>
+
+<h2>Instrucciones por Tiempo</h2>
+<table>
+<thead><tr><th>Tiempo</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+</tr></thead>
+
+<tbody>
+<tr><td>1</td>
+<td>Esperar</td>
+<td>Adelante (H2P1)</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>2</td>
+<td>Esperar</td>
+<td>Regar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>3</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Adelante (H4P1)</td>
+</tr>
+
+<tr><td>4</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Regar</td>
+</tr>
+
+<tr><td>5</td>
+<td>Adelante (H1P1)</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>6</td>
+<td>Adelante (H1P2)</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>7</td>
+<td>Regar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>8</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Adelante (H3P1)</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>9</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Adelante (H3P2)</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>10</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Regar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>11</td>
+<td>Esperar</td>
+<td>Adelante (H2P2)</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>12</td>
+<td>Esperar</td>
+<td>Regar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>13</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Adelante (H4P2)</td>
+</tr>
+
+<tr><td>14</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Regar</td>
+</tr>
+
+<tr><td>15</td>
+<td>Regar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>16</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Regar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>17</td>
+<td>Esperar</td>
+<td>Adelante (H2P3)</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>18</td>
+<td>Esperar</td>
+<td>Regar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+</tr>
+
+<tr><td>19</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Esperar</td>
+<td>Adelante (H4P3)</td>
+</tr>
+
+<tr><td>20</td>
+<td>Regresar (H1P1)</td>
+<td>Regresar (H2P2)</td>
+<td>Regresar (H3P1)</td>
+<td>Regresar (H4P2)</td>
+</tr>
+
+<tr><td>21</td>
+<td>FIN</td>
+<td>Regresar (H2P1)</td>
+<td>FIN</td>
+<td>Regresar (H4P1)</td>
+</tr>
+
+<tr><td>22</td>
+<td>Esperar</td>
+<td>FIN</td>
+<td>Esperar</td>
+<td>FIN</td>
+</tr>
+
+</tbody></table>
+
+<h2>Estadísticas Finales</h2>
+<p><strong>Información del plan de riego y aplicación de fertilizante robotizado:</strong></p>
+<ul>
+<li><strong>Tiempo para regado óptimo:</strong> 22 segundos</li>
+<li><strong>Agua requerida por dron:</strong><ul>
+<li>1 - 4.0 litros</li>
+<li>2 - 4.0 litros</li>
+<li>3 - 4.0 litros</li>
+<li>4 - 3.0 litros</li>
+<li><strong>TOTAL:</strong> 15.0 litros</li>
+</ul></li>
+<li><strong>Fertilizante requerido por dron:</strong><ul>
+<li>1 - 100.0 gramos</li>
+<li>2 - 175.0 gramos</li>
+<li>3 - 100.0 gramos</li>
+<li>4 - 150.0 gramos</li>
+<li><strong>TOTAL:</strong> 525.0 gramos</li>
+</ul></li>
+</ul>
+
+</div>
+</body>
+</html>
