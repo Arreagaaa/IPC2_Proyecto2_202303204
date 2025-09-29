@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for, send_from_directory
 import os
 import tempfile
 import zipfile
@@ -20,6 +20,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs('static/reports', exist_ok=True)
 os.makedirs('static/graphs', exist_ok=True)
+os.makedirs('output', exist_ok=True)
 
 # sistema global
 sistema = SistemaRiego()
@@ -177,11 +178,13 @@ def generate_html_report():
     if sistema.simulaciones.obtener_tamaño() == 0:
         return jsonify({'error': 'No hay simulaciones ejecutadas'}), 400
 
-    # generar reporte
-    report_path = f"static/reports/reporte_{sistema.invernadero_actual.nombre.replace(' ', '_')}.html"
-    success = sistema.generar_reporte_html(report_path)
+    # generar reporte usando estructura organizada
+    success = sistema.generar_reporte_html()
 
     if success:
+        nombre_invernadero = sistema.invernadero_actual.nombre.replace(
+            ' ', '_')
+        report_path = f"output/{nombre_invernadero}/ReporteInvernadero_{nombre_invernadero}.html"
         return jsonify({
             'success': True,
             'report_url': f"/{report_path}"
@@ -210,19 +213,23 @@ def generate_tda_graph():
     success = sistema.visualizar_tdas_en_tiempo(tiempo_t)
 
     if success:
-        # nombres de archivos generados
+        # nombres de archivos generados con estructura organizada
+        nombre_invernadero = sistema.invernadero_actual.nombre.replace(
+            ' ', '_')
         prefix = f"visualization_t{tiempo_t}"
+        base_path = f"output/{nombre_invernadero}/graficos"
+
         return jsonify({
             'success': True,
             'visualization': {
-                'plan_riego_png': f"/static/graphs/{prefix}_plan_riego.png",
-                'cola_riego_png': f"/static/graphs/{prefix}_cola_riego.png", 
-                'drones_png': f"/static/graphs/{prefix}_drones.png",
-                'tiempo_t_png': f"/static/graphs/{prefix}_tiempo_{tiempo_t}.png",
-                'plan_riego_html': f"/static/graphs/{prefix}_plan_riego.html",
-                'cola_riego_html': f"/static/graphs/{prefix}_cola_riego.html",
-                'drones_html': f"/static/graphs/{prefix}_drones.html",
-                'tiempo_t_html': f"/static/graphs/{prefix}_tiempo_{tiempo_t}.html"
+                'plan_riego_png': f"/{base_path}/{prefix}_plan_riego.png",
+                'cola_riego_png': f"/{base_path}/{prefix}_cola_riego.png",
+                'drones_png': f"/{base_path}/{prefix}_drones.png",
+                'tiempo_t_png': f"/{base_path}/{prefix}_tiempo_{tiempo_t}.png",
+                'plan_riego_html': f"/{base_path}/{prefix}_plan_riego.html",
+                'cola_riego_html': f"/{base_path}/{prefix}_cola_riego.html",
+                'drones_html': f"/{base_path}/{prefix}_drones.html",
+                'tiempo_t_html': f"/{base_path}/{prefix}_tiempo_{tiempo_t}.html"
             },
             'tiempo': tiempo_t
         })
@@ -245,7 +252,7 @@ def visualize_tda_at_time(tiempo_t):
 
     # obtener archivos de visualización disponibles
     archivos_disponibles = sistema.obtener_archivos_visualizacion_disponibles()
-    
+
     # convertir a lista para template
     archivos_list = []
     for i in range(archivos_disponibles.obtener_tamaño()):
@@ -253,21 +260,21 @@ def visualize_tda_at_time(tiempo_t):
         if f"t{tiempo}" in archivo:
             archivos_list.append(archivo)
 
-    return render_template('visualization.html', 
-                         tiempo=tiempo, 
-                         archivos=archivos_list,
-                         invernadero=sistema.invernadero_actual.nombre if sistema.invernadero_actual else None)
+    return render_template('visualization.html',
+                           tiempo=tiempo,
+                           archivos=archivos_list,
+                           invernadero=sistema.invernadero_actual.nombre if sistema.invernadero_actual else None)
 
 
-@app.route('/view_tda_graph/<graph_name>')
-def view_tda_graph(graph_name):
-    # mostrar gráfico específico de TDA
-    html_path = f"static/graphs/{graph_name}"
-    
+@app.route('/view_tda_graph/<path:graph_path>')
+def view_tda_graph(graph_path):
+    # mostrar gráfico específico de TDA desde estructura organizada
+    html_path = f"output/{graph_path}"
+
     if not os.path.exists(html_path):
         flash('Archivo de visualización no encontrado', 'error')
         return redirect(url_for('simulation'))
-    
+
     # leer contenido del archivo HTML
     try:
         with open(html_path, 'r', encoding='utf-8') as f:
@@ -285,7 +292,8 @@ def generate_xml_output():
         flash('No hay simulaciones ejecutadas', 'warning')
         return redirect(url_for('simulation'))
 
-    output_path = 'static/reports/salida.xml'
+    nombre_invernadero = sistema.invernadero_actual.nombre.replace(' ', '_')
+    output_path = f'output/{nombre_invernadero}/salida.xml'
     success = sistema.generar_archivo_salida(output_path)
 
     if success:
@@ -304,25 +312,35 @@ def download_reports():
 
     # crear zip temporal con todos los reportes
     temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+    nombre_invernadero = sistema.invernadero_actual.nombre.replace(' ', '_')
 
     with zipfile.ZipFile(temp_zip.name, 'w') as zipf:
         # agregar reporte HTML
-        html_path = f"static/reports/reporte_{sistema.invernadero_actual.nombre.replace(' ', '_')}.html"
+        html_path = f"output/{nombre_invernadero}/ReporteInvernadero_{nombre_invernadero}.html"
         if os.path.exists(html_path):
             zipf.write(
-                html_path, f"reporte_{sistema.invernadero_actual.nombre.replace(' ', '_')}.html")
+                html_path, f"ReporteInvernadero_{nombre_invernadero}.html")
 
         # agregar XML de salida
-        xml_path = 'static/reports/salida.xml'
+        xml_path = f'output/{nombre_invernadero}/salida.xml'
         if os.path.exists(xml_path):
             zipf.write(xml_path, 'salida.xml')
 
-        # agregar graficos DOT si existen
-        for file in os.listdir('static/graphs'):
-            if file.endswith('.dot'):
-                zipf.write(f"static/graphs/{file}", f"graficos/{file}")
+        # agregar graficos desde estructura organizada
+        graficos_dir = f'output/{nombre_invernadero}/graficos'
+        if os.path.exists(graficos_dir):
+            for file in os.listdir(graficos_dir):
+                file_path = os.path.join(graficos_dir, file)
+                if os.path.isfile(file_path):
+                    zipf.write(file_path, f"graficos/{file}")
 
-    return send_file(temp_zip.name, as_attachment=True, download_name='reportes_sistema_riego.zip')
+    return send_file(temp_zip.name, as_attachment=True, download_name=f'reportes_{nombre_invernadero}.zip')
+
+
+@app.route('/output/<path:filename>')
+def serve_output_files(filename):
+    # servir archivos desde la carpeta output organizada
+    return send_from_directory('output', filename)
 
 
 @app.route('/help')

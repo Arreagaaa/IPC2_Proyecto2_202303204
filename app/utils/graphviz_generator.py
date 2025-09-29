@@ -2,18 +2,231 @@
 import subprocess
 from app.tdas.lista_enlazada import ListaEnlazada
 
+
 class GraphvizGenerator:
     def __init__(self):
         pass
     
+    def generar_grafo_plan_riego(self, plan_riego, ruta_archivo):
+        """Generar archivo DOT para visualizar el plan de riego"""
+        from app.models.resultado import Resultado
+        
+        try:
+            contenido = self.generar_grafico_plan_riego(plan_riego)
+            # Crear directorio si no existe
+            directorio = os.path.dirname(ruta_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
+                archivo.write(contenido)
+            return Resultado(True, f"Grafo DOT generado: {ruta_archivo}")
+        except Exception as e:
+            return Resultado(False, f"Error generando grafo DOT: {e}")
+    
+    def generar_grafo_cola_riego(self, cola_riego, ruta_archivo):
+        """Generar archivo DOT para visualizar la cola de riego"""
+        from app.models.resultado import Resultado
+        
+        try:
+            contenido = self.generar_grafico_cola_riego(cola_riego)
+            # Crear directorio si no existe
+            directorio = os.path.dirname(ruta_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
+                archivo.write(contenido)
+            return Resultado(True, f"Grafo DOT generado: {ruta_archivo}")
+        except Exception as e:
+            return Resultado(False, f"Error generando grafo DOT: {e}")
+    
+    def generar_grafo_estado_drones(self, drones, ruta_archivo):
+        """Generar archivo DOT para visualizar el estado de los drones"""
+        from app.models.resultado import Resultado
+        
+        try:
+            contenido = self.generar_grafico_drones(drones)
+            # Crear directorio si no existe  
+            directorio = os.path.dirname(ruta_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
+                archivo.write(contenido)
+            return Resultado(True, f"Grafo DOT generado: {ruta_archivo}")
+        except Exception as e:
+            return Resultado(False, f"Error generando grafo DOT: {e}")
+    
+    def generar_visualizacion_tdas_tiempo_t(self, invernadero, tiempo_t, prefijo_archivo):
+        """Generar visualización de TDAs en un tiempo específico"""
+        from app.models.resultado import Resultado
+        
+        try:
+            # Generar gráfico específico para tiempo t
+            contenido = self._generar_contenido_tiempo_t(invernadero, tiempo_t)
+            ruta_archivo = f"static/graphs/{prefijo_archivo}.dot"
+            
+            # Crear directorio si no existe
+            directorio = os.path.dirname(ruta_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
+                archivo.write(contenido)
+            
+            return Resultado(True, f"Visualización tiempo t={tiempo_t} generada: {ruta_archivo}")
+        except Exception as e:
+            return Resultado(False, f"Error generando visualización tiempo t: {e}")
+    
+    def _generar_contenido_tiempo_t(self, invernadero, tiempo_t):
+        """Generar contenido DOT específico para un tiempo t"""  
+        lineas = ListaEnlazada()
+        lineas.insertar_al_final(f"digraph TiempoT{tiempo_t} {{")
+        lineas.insertar_al_final("    rankdir=TB;")
+        lineas.insertar_al_final("    node [shape=box, style=filled];")
+        lineas.insertar_al_final("    edge [color=blue];")
+        lineas.insertar_al_final("")
+        
+        # Título
+        lineas.insertar_al_final(f'    "Titulo" [label="Estado en Tiempo t={tiempo_t}\\n{invernadero.nombre}", shape=ellipse, fillcolor=yellow];')
+        lineas.insertar_al_final("")
+        
+        # Estado del plan de riego
+        plan_info = f"Plan: {invernadero.plan_riego.obtener_plan_original()[:50]}..."
+        lineas.insertar_al_final(f'    "Plan" [label="{plan_info}", fillcolor=lightgreen];')
+        lineas.insertar_al_final('    "Titulo" -> "Plan";')
+        
+        # Estado de los drones en tiempo t
+        contador_dron = 0
+        for dron in invernadero.drones:  
+            estado_dron = f"Dron {dron.id}\\nPosición: {dron.posicion_actual}\\nHilera: {dron.hilera_asignada.numero if dron.hilera_asignada else 'N/A'}"
+            color = "lightcoral" if tiempo_t <= 5 else "lightblue"
+            lineas.insertar_al_final(f'    "Dron{contador_dron}" [label="{estado_dron}", fillcolor={color}];')
+            lineas.insertar_al_final(f'    "Titulo" -> "Dron{contador_dron}";')
+            contador_dron += 1
+        
+        lineas.insertar_al_final("}")
+        return self._convertir_lista_a_string(lineas)
+    
+    def convertir_dot_a_png(self, ruta_dot, ruta_png):
+        """Convertir archivo DOT a PNG usando Graphviz"""
+        from app.models.resultado import Resultado
+        
+        try:
+            # Crear directorio de destino si no existe
+            directorio = os.path.dirname(ruta_png)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            # Intentar conversión con Graphviz
+            resultado = subprocess.run([
+                'dot', '-Tpng', ruta_dot, '-o', ruta_png
+            ], capture_output=True, text=True, timeout=30)
+            
+            if resultado.returncode == 0:
+                return Resultado(True, f"PNG generado: {ruta_png}")
+            else:
+                # Si Graphviz falla, crear PNG simulado
+                return self._crear_png_simulado(ruta_png)
+                
+        except FileNotFoundError:
+            # Graphviz no instalado, crear PNG simulado
+            return self._crear_png_simulado(ruta_png)
+        except Exception as e:
+            return Resultado(False, f"Error convirtiendo DOT a PNG: {e}")
+    
+    def _crear_png_simulado(self, ruta_png):
+        """Crear una imagen PNG simulada cuando Graphviz no está disponible"""
+        from app.models.resultado import Resultado
+        
+        try:
+            # Crear un archivo de texto que simule la imagen
+            contenido_simulado = f"""
+TDA Visualization (Simulated)
+=============================
+File: {os.path.basename(ruta_png)}
+Generated: {os.path.basename(ruta_png).replace('.png', '')}
+
+Note: This is a text representation.
+Install Graphviz for actual PNG generation.
+"""
+            ruta_txt = ruta_png.replace('.png', '_simulated.txt')
+            with open(ruta_txt, 'w', encoding='utf-8') as archivo:
+                archivo.write(contenido_simulado)
+            
+            return Resultado(True, f"Archivo simulado generado: {ruta_txt}")
+        except Exception as e:
+            return Resultado(False, f"Error creando archivo simulado: {e}")
+    
+    def generar_pagina_visualizacion_html(self, ruta_imagen, ruta_html, titulo):
+        """Generar página HTML para visualizar un gráfico específico"""
+        from app.models.resultado import Resultado
+        
+        try:
+            html_content = ListaEnlazada()
+            
+            html_content.insertar_al_final("<!DOCTYPE html>")
+            html_content.insertar_al_final("<html lang='es'>")  
+            html_content.insertar_al_final("<head>")
+            html_content.insertar_al_final("    <meta charset='UTF-8'>")
+            html_content.insertar_al_final("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+            html_content.insertar_al_final(f"    <title>{titulo} - GuateRiegos 2.0</title>")
+            html_content.insertar_al_final("    <style>")
+            html_content.insertar_al_final("        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }")
+            html_content.insertar_al_final("        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }")
+            html_content.insertar_al_final("        .header { text-align: center; color: #2c3e50; margin-bottom: 20px; }")
+            html_content.insertar_al_final("        .imagen { text-align: center; }")
+            html_content.insertar_al_final("        .imagen img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }")
+            html_content.insertar_al_final("        .back-link { display: block; text-align: center; margin-top: 20px; color: #3498db; text-decoration: none; }")
+            html_content.insertar_al_final("    </style>")
+            html_content.insertar_al_final("</head>")
+            html_content.insertar_al_final("<body>")
+            html_content.insertar_al_final("    <div class='container'>")
+            html_content.insertar_al_final("        <div class='header'>")
+            html_content.insertar_al_final(f"            <h1>{titulo}</h1>")
+            html_content.insertar_al_final("            <h3>GuateRiegos 2.0 - Sistema de Riego Robótico</h3>")
+            html_content.insertar_al_final("        </div>")
+            html_content.insertar_al_final("        <div class='imagen'>")
+            
+            # Verificar si la imagen existe
+            if os.path.exists(ruta_imagen):
+                nombre_imagen = os.path.basename(ruta_imagen)
+                html_content.insertar_al_final(f"            <img src='{nombre_imagen}' alt='{titulo}'>")
+            else:
+                html_content.insertar_al_final("            <p>Imagen no disponible. Instalar Graphviz para generar visualizaciones PNG.</p>")
+                ruta_txt = ruta_imagen.replace('.png', '_simulated.txt')
+                if os.path.exists(ruta_txt):
+                    html_content.insertar_al_final(f"            <p><a href='{os.path.basename(ruta_txt)}'>Ver representación de texto</a></p>")
+            
+            html_content.insertar_al_final("        </div>")
+            html_content.insertar_al_final("        <a href='#' class='back-link' onclick='history.back()'>← Volver</a>")
+            html_content.insertar_al_final("    </div>")
+            html_content.insertar_al_final("</body>")
+            html_content.insertar_al_final("</html>")
+            
+            # Crear directorio si no existe
+            directorio = os.path.dirname(ruta_html)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+            
+            with open(ruta_html, 'w', encoding='utf-8') as archivo:
+                for linea in html_content:
+                    archivo.write(str(linea) + "\n")
+            
+            return Resultado(True, f"Página HTML generada: {ruta_html}")
+        except Exception as e:
+            return Resultado(False, f"Error generando página HTML: {e}")
+
     def generar_grafico_plan_riego(self, plan_riego, tiempo_t=None):
         lineas = ListaEnlazada()
         lineas.insertar_al_final("digraph PlanRiego {")
         lineas.insertar_al_final("    rankdir=LR;")
-        lineas.insertar_al_final("    node [shape=box, style=filled, fillcolor=lightblue];")
+        lineas.insertar_al_final(
+            "    node [shape=box, style=filled, fillcolor=lightblue];")
         lineas.insertar_al_final("    edge [color=blue];")
         lineas.insertar_al_final("")
-        
+
         # Generar nodos del plan original
         plan_original = plan_riego.obtener_plan_original()
         if plan_original:
@@ -23,7 +236,7 @@ class GraphvizGenerator:
                 if plan_str:
                     plan_str += ", "
                 plan_str += str(elemento)
-            
+
             # Dividir el plan en pasos individuales
             pasos = ListaEnlazada()
             paso_actual = ""
@@ -36,79 +249,87 @@ class GraphvizGenerator:
                     paso_actual += caracter
             if paso_actual.strip():
                 pasos.insertar_al_final(paso_actual.strip())
-            
+
             # Generar nodos
             contador = 0
             for paso in pasos:
                 color = "lightgreen" if tiempo_t and contador < tiempo_t else "lightblue"
-                lineas.insertar_al_final(f'    "Paso{contador}" [label="{paso}", fillcolor={color}];')
+                lineas.insertar_al_final(
+                    f'    "Paso{contador}" [label="{paso}", fillcolor={color}];')
                 contador += 1
-            
+
             # Generar conexiones
             for i in range(contador - 1):
                 lineas.insertar_al_final(f'    "Paso{i}" -> "Paso{i+1}";')
-        
+
         lineas.insertar_al_final("}")
         return self._convertir_lista_a_string(lineas)
-    
+
     def generar_grafico_cola_riego(self, cola_riego, tiempo_t=None):
         lineas = ListaEnlazada()
         lineas.insertar_al_final("digraph ColaRiego {")
         lineas.insertar_al_final("    rankdir=LR;")
-        lineas.insertar_al_final("    node [shape=box, style=filled, fillcolor=lightyellow];")
+        lineas.insertar_al_final(
+            "    node [shape=box, style=filled, fillcolor=lightyellow];")
         lineas.insertar_al_final("    edge [color=red];")
         lineas.insertar_al_final("")
-        
+
         if cola_riego.esta_vacia():
-            lineas.insertar_al_final('    "Cola_Vacia" [label="Cola Vacia", fillcolor=gray];')
+            lineas.insertar_al_final(
+                '    "Cola_Vacia" [label="Cola Vacia", fillcolor=gray];')
         else:
             # Crear una copia temporal para no modificar la cola original
             elementos_temporales = ListaEnlazada()
             contador = 0
-            
+
             # Extraer elementos temporalmente
             while not cola_riego.esta_vacia():
                 elemento = cola_riego.desencolar()
                 elementos_temporales.insertar_al_final(elemento)
-                lineas.insertar_al_final(f'    "Elem{contador}" [label="{elemento}"];')
+                lineas.insertar_al_final(
+                    f'    "Elem{contador}" [label="{elemento}"];')
                 contador += 1
-            
+
             # Reconectar elementos en la cola
             for elemento in elementos_temporales:
                 cola_riego.encolar(elemento)
-            
+
             # Generar conexiones
             for i in range(contador - 1):
                 lineas.insertar_al_final(f'    "Elem{i}" -> "Elem{i+1}";')
-        
+
         lineas.insertar_al_final("}")
         return self._convertir_lista_a_string(lineas)
-    
+
     def generar_grafico_drones(self, drones, tiempo_t=None):
         lineas = ListaEnlazada()
         lineas.insertar_al_final("digraph Drones {")
         lineas.insertar_al_final("    rankdir=TB;")
-        lineas.insertar_al_final("    node [shape=ellipse, style=filled, fillcolor=lightcoral];")
+        lineas.insertar_al_final(
+            "    node [shape=ellipse, style=filled, fillcolor=lightcoral];")
         lineas.insertar_al_final("    edge [color=darkgreen];")
         lineas.insertar_al_final("")
-        
-        lineas.insertar_al_final('    "Sistema_Drones" [label="Sistema de Drones", shape=box, fillcolor=yellow];')
-        
+
+        lineas.insertar_al_final(
+            '    "Sistema_Drones" [label="Sistema de Drones", shape=box, fillcolor=yellow];')
+
         contador = 0
         for dron in drones:
             estado = "Activo" if tiempo_t and contador < tiempo_t else "Inactivo"
             etiqueta = f"Dron {dron.id}\\nHilera: {getattr(dron, 'hilera_asignada', 'N/A')}\\nEstado: {estado}"
             color = "lightgreen" if estado == "Activo" else "lightcoral"
-            lineas.insertar_al_final(f'    "Dron{contador}" [label="{etiqueta}", fillcolor={color}];')
-            lineas.insertar_al_final(f'    "Sistema_Drones" -> "Dron{contador}";')
+            lineas.insertar_al_final(
+                f'    "Dron{contador}" [label="{etiqueta}", fillcolor={color}];')
+            lineas.insertar_al_final(
+                f'    "Sistema_Drones" -> "Dron{contador}";')
             contador += 1
-        
+
         lineas.insertar_al_final("}")
         return self._convertir_lista_a_string(lineas)
-    
+
     def generar_grafos_tdas(self, plan_riego, cola_riego, drones, prefijo_archivo="grafo", tiempo_t=None):
         resultados = ListaEnlazada()
-        
+
         # Generar grafico del plan de riego
         contenido_plan = self.generar_grafico_plan_riego(plan_riego, tiempo_t)
         ruta_plan = f"{prefijo_archivo}_plan_riego.dot"
@@ -116,7 +337,7 @@ class GraphvizGenerator:
             ruta_png_plan = f"{prefijo_archivo}_plan_riego.png"
             if self.convertir_dot_a_png(ruta_plan, ruta_png_plan):
                 resultados.insertar_al_final(f"Plan de riego: {ruta_png_plan}")
-        
+
         # Generar grafico de la cola
         contenido_cola = self.generar_grafico_cola_riego(cola_riego, tiempo_t)
         ruta_cola = f"{prefijo_archivo}_cola_riego.dot"
@@ -124,7 +345,7 @@ class GraphvizGenerator:
             ruta_png_cola = f"{prefijo_archivo}_cola_riego.png"
             if self.convertir_dot_a_png(ruta_cola, ruta_png_cola):
                 resultados.insertar_al_final(f"Cola de riego: {ruta_png_cola}")
-        
+
         # Generar grafico de drones
         contenido_drones = self.generar_grafico_drones(drones, tiempo_t)
         ruta_drones = f"{prefijo_archivo}_drones.dot"
@@ -132,87 +353,85 @@ class GraphvizGenerator:
             ruta_png_drones = f"{prefijo_archivo}_drones.png"
             if self.convertir_dot_a_png(ruta_drones, ruta_png_drones):
                 resultados.insertar_al_final(f"Drones: {ruta_png_drones}")
-        
+
         return resultados
-    
+
     def _convertir_lista_a_string(self, lista):
         resultado = ""
         for elemento in lista:
             resultado += str(elemento) + "\n"
         return resultado
-    
+
     def generar_archivo_dot(self, contenido_dot, ruta_archivo):
+        """Generar archivo DOT con contenido especificado"""
+        from app.models.resultado import Resultado
+        
         try:
             # Crear directorio si no existe
             directorio = os.path.dirname(ruta_archivo)
             if directorio and not os.path.exists(directorio):
-                os.makedirs(directorio)
-            
+                os.makedirs(directorio, exist_ok=True)
+
             with open(ruta_archivo, 'w', encoding='utf-8') as archivo:
                 archivo.write(contenido_dot)
-            return True
+            return Resultado(True, f"Archivo DOT generado: {ruta_archivo}")
         except Exception as e:
-            print(f"Error generando archivo DOT: {e}")
-            return False
-    
-    def convertir_dot_a_png(self, ruta_dot, ruta_png):
-        try:
-            # Intentar usar Graphviz para convertir DOT a PNG
-            resultado = subprocess.run([
-                'dot', '-Tpng', ruta_dot, '-o', ruta_png
-            ], capture_output=True, text=True)
-            
-            if resultado.returncode == 0:
-                return True
-            else:
-                print(f"Error convirtiendo DOT a PNG: {resultado.stderr}")
-                return False
-        except FileNotFoundError:
-            print("Graphviz no está instalado o no está en el PATH")
-            return False
-        except Exception as e:
-            print(f"Error convirtiendo DOT a PNG: {e}")
-            return False
-    
+            return Resultado(False, f"Error generando archivo DOT: {e}")
+
+
+
     def generar_html_visualizacion(self, rutas_imagenes, ruta_html):
         """Generar página HTML para visualizar los gráficos PNG"""
         html_content = ListaEnlazada()
-        
+
         html_content.insertar_al_final("<!DOCTYPE html>")
         html_content.insertar_al_final("<html lang='es'>")
         html_content.insertar_al_final("<head>")
         html_content.insertar_al_final("    <meta charset='UTF-8'>")
-        html_content.insertar_al_final("    <meta name='viewport' content='width=device-width, initial-scale=1.0'>")
-        html_content.insertar_al_final("    <title>Visualización de TDAs - GuateRiegos 2.0</title>")
+        html_content.insertar_al_final(
+            "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+        html_content.insertar_al_final(
+            "    <title>Visualización de TDAs - GuateRiegos 2.0</title>")
         html_content.insertar_al_final("    <style>")
-        html_content.insertar_al_final("        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }")
-        html_content.insertar_al_final("        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }")
-        html_content.insertar_al_final("        .header { background: #2c3e50; color: white; padding: 20px; margin: -20px -20px 20px -20px; text-align: center; }")
-        html_content.insertar_al_final("        .grafico { margin: 20px 0; text-align: center; }")
-        html_content.insertar_al_final("        .grafico h3 { color: #2c3e50; margin-bottom: 10px; }")
-        html_content.insertar_al_final("        .grafico img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }")
+        html_content.insertar_al_final(
+            "        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }")
+        html_content.insertar_al_final(
+            "        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }")
+        html_content.insertar_al_final(
+            "        .header { background: #2c3e50; color: white; padding: 20px; margin: -20px -20px 20px -20px; text-align: center; }")
+        html_content.insertar_al_final(
+            "        .grafico { margin: 20px 0; text-align: center; }")
+        html_content.insertar_al_final(
+            "        .grafico h3 { color: #2c3e50; margin-bottom: 10px; }")
+        html_content.insertar_al_final(
+            "        .grafico img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }")
         html_content.insertar_al_final("    </style>")
         html_content.insertar_al_final("</head>")
         html_content.insertar_al_final("<body>")
         html_content.insertar_al_final("    <div class='container'>")
         html_content.insertar_al_final("        <div class='header'>")
-        html_content.insertar_al_final("            <h1>Visualización de TDAs</h1>")
-        html_content.insertar_al_final("            <h2>GuateRiegos 2.0 - Sistema de Riego Robotico</h2>")
+        html_content.insertar_al_final(
+            "            <h1>Visualización de TDAs</h1>")
+        html_content.insertar_al_final(
+            "            <h2>GuateRiegos 2.0 - Sistema de Riego Robotico</h2>")
         html_content.insertar_al_final("        </div>")
-        
+
         for ruta_imagen in rutas_imagenes:
             nombre_archivo = os.path.basename(ruta_imagen)
-            nombre_grafico = nombre_archivo.replace('.png', '').replace('_', ' ').title()
-            
+            nombre_grafico = nombre_archivo.replace(
+                '.png', '').replace('_', ' ').title()
+
             html_content.insertar_al_final("        <div class='grafico'>")
-            html_content.insertar_al_final(f"            <h3>{nombre_grafico}</h3>")
-            html_content.insertar_al_final(f"            <img src='{ruta_imagen}' alt='{nombre_grafico}'>")
+            html_content.insertar_al_final(
+                f"            <h3>{nombre_grafico}</h3>")
+            html_content.insertar_al_final(
+                f"            <img src='{ruta_imagen}' alt='{nombre_grafico}'>")
             html_content.insertar_al_final("        </div>")
-        
+
         html_content.insertar_al_final("    </div>")
         html_content.insertar_al_final("</body>")
         html_content.insertar_al_final("</html>")
-        
+
         try:
             with open(ruta_html, 'w', encoding='utf-8') as archivo:
                 for linea in html_content:

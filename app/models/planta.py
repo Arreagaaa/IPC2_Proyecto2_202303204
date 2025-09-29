@@ -1,11 +1,19 @@
 # planta con requerimientos de agua y fertilizante
 class Planta:
-    def __init__(self, posicion, litros_agua, gramos_fertilizante):
+    def __init__(self, nombre, posicion):
+        self.nombre = nombre  # Nombre de la planta (tipo)
         self.posicion = posicion  # Posición en la hilera (1, 2, 3, ...)
-        self.litros_agua = litros_agua  # Cantidad de agua requerida
-        # Cantidad de fertilizante requerida
-        self.gramos_fertilizante = gramos_fertilizante
+        self.agua_requerida = 0  # Cantidad de agua requerida (será asignada después)
+        self.fertilizante_requerido = 0  # Cantidad de fertilizante requerida
         self.regada = False  # Estado de riego
+    
+    @property
+    def litros_agua(self):
+        return self.agua_requerida
+    
+    @property
+    def gramos_fertilizante(self):
+        return self.fertilizante_requerido
 
     def regar(self):
         self.regada = True

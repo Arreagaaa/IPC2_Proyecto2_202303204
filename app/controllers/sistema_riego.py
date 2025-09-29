@@ -112,6 +112,12 @@ class SistemaRiego:
         resultados = ultima_simulacion.obtener_resultados()
         registro_instrucciones = ultima_simulacion.obtener_registro_instrucciones()
 
+        # Si no se especifica ruta, generar con estructura organizada
+        if ruta_salida == "output/salida.xml" or not ruta_salida:
+            nombre_invernadero = self.invernadero_actual.nombre.replace(" ", "_")
+            carpeta_invernadero = f"output/{nombre_invernadero}"
+            ruta_salida = f"{carpeta_invernadero}/salida_{nombre_invernadero}.xml"
+
         resultado = self.xml_generator.generar_archivo_salida(
             self.invernadero_actual,
             resultados,
@@ -195,10 +201,11 @@ class SistemaRiego:
         resultados = ultima_simulacion.obtener_resultados()
         registro_instrucciones = ultima_simulacion.obtener_registro_instrucciones()
 
-        # Generar nombre de archivo si no se proporciona
+        # Generar nombre de archivo y estructura de carpetas si no se proporciona
         if ruta_reporte is None:
             nombre_archivo = self.invernadero_actual.nombre.replace(" ", "_")
-            ruta_reporte = f"ReporteInvernadero_{nombre_archivo}.html"
+            carpeta_invernadero = f"output/{nombre_archivo}"
+            ruta_reporte = f"{carpeta_invernadero}/ReporteInvernadero_{nombre_archivo}.html"
 
         # Generar contenido HTML
         contenido_html = self.html_generator.generar_reporte_invernadero(
@@ -228,65 +235,76 @@ class SistemaRiego:
             print("No hay invernadero seleccionado")
             return False
 
+        # Crear estructura de carpetas organizada por invernadero
+        nombre_invernadero = self.invernadero_actual.nombre.replace(" ", "_")
+        carpeta_graficos = f"output/{nombre_invernadero}/graficos"
+        
+        # Actualizar prefijo con la nueva ruta
+        prefijo_completo = f"{carpeta_graficos}/{prefijo_archivo}"
+
         resultados = ListaEnlazada()
 
         # Grafo del plan de riego
         plan_riego = self.invernadero_actual.plan_riego
         resultado1 = self.graphviz_generator.generar_grafo_plan_riego(
-            plan_riego, f"{prefijo_archivo}_plan_riego.dot")
+            plan_riego, f"{prefijo_completo}_plan_riego.dot")
         resultados.insertar_al_final(resultado1)
 
         # Grafo de la cola de riego
         resultado2 = self.graphviz_generator.generar_grafo_cola_riego(
-            plan_riego.secuencia_riego, f"{prefijo_archivo}_cola_riego.dot")
+            plan_riego.secuencia_riego, f"{prefijo_completo}_cola_riego.dot")
         resultados.insertar_al_final(resultado2)
 
         # Grafo del estado de los drones
         resultado3 = self.graphviz_generator.generar_grafo_estado_drones(
-            self.invernadero_actual.drones, f"{prefijo_archivo}_drones.dot")
+            self.invernadero_actual.drones, f"{prefijo_completo}_drones.dot")
         resultados.insertar_al_final(resultado3)
 
         # Generar visualización de TDAs en tiempo_t si se especifica
         if tiempo_t is not None:
             resultado4 = self.graphviz_generator.generar_visualizacion_tdas_tiempo_t(
-                self.invernadero_actual, tiempo_t, f"{prefijo_archivo}_tiempo_{tiempo_t}")
+                self.invernadero_actual, tiempo_t, f"{prefijo_completo}_tiempo_{tiempo_t}")
             resultados.insertar_al_final(resultado4)
 
         # Convertir DOT a PNG y generar HTML
         archivos_generados = ListaEnlazada()
         todos_exitosos = True
-        
+
         for i in range(resultados.obtener_tamaño()):
             resultado = resultados.obtener(i)
             print(resultado.obtener_mensaje())
-            
+
             if resultado.es_exitoso():
                 # Obtener nombre del archivo DOT
                 archivo_dot = resultado.obtener_mensaje().split(": ")[-1]
-                
+
                 # Convertir a PNG
                 archivo_png = archivo_dot.replace(".dot", ".png")
-                resultado_png = self.graphviz_generator.convertir_dot_a_png(archivo_dot, archivo_png)
-                
+                resultado_png = self.graphviz_generator.convertir_dot_a_png(
+                    archivo_dot, archivo_png)
+
                 if resultado_png.es_exitoso():
                     archivos_generados.insertar_al_final(archivo_png)
-                    
+
                     # Generar página HTML de visualización
                     nombre_base = archivo_dot.replace(".dot", "")
                     resultado_html = self.graphviz_generator.generar_pagina_visualizacion_html(
                         archivo_png, f"{nombre_base}.html", nombre_base)
-                    
+
                     if not resultado_html.es_exitoso():
                         todos_exitosos = False
-                        print(f"Error generando HTML: {resultado_html.obtener_mensaje()}")
+                        print(
+                            f"Error generando HTML: {resultado_html.obtener_mensaje()}")
                 else:
                     todos_exitosos = False
-                    print(f"Error convirtiendo PNG: {resultado_png.obtener_mensaje()}")
+                    print(
+                        f"Error convirtiendo PNG: {resultado_png.obtener_mensaje()}")
             else:
                 todos_exitosos = False
 
         if todos_exitosos:
-            print("Todos los gráficos fueron generados exitosamente con conversión PNG y HTML")
+            print(
+                "Todos los gráficos fueron generados exitosamente con conversión PNG y HTML")
         else:
             print("Algunos gráficos tuvieron errores durante la generación")
 
@@ -298,22 +316,25 @@ class SistemaRiego:
         Requerido por el enunciado para mostrar el estado de estructuras de datos
         """
         if self.invernadero_actual is None:
-            print(f"No hay invernadero seleccionado para visualizar en tiempo {tiempo_t}")
+            print(
+                f"No hay invernadero seleccionado para visualizar en tiempo {tiempo_t}")
             return False
 
         print(f"Generando visualización de TDAs en tiempo t={tiempo_t}")
-        
+
         # Generar archivos de visualización
         prefijo = f"visualization_t{tiempo_t}"
         exito = self.generar_grafos_tdas(prefijo, tiempo_t)
-        
+
         if exito:
-            print(f"Visualización generada exitosamente para tiempo t={tiempo_t}")
-            print(f"Archivos generados en: static/graphs/{prefijo}_*.png")
-            print(f"Páginas HTML en: static/graphs/{prefijo}_*.html")
+            nombre_invernadero = self.invernadero_actual.nombre.replace(" ", "_")
+            print(
+                f"Visualización generada exitosamente para tiempo t={tiempo_t}")
+            print(f"Archivos generados en: output/{nombre_invernadero}/graficos/{prefijo}_*.png")
+            print(f"Páginas HTML en: output/{nombre_invernadero}/graficos/{prefijo}_*.html")
         else:
             print(f"Error generando visualización para tiempo t={tiempo_t}")
-            
+
         return exito
 
     def obtener_archivos_visualizacion_disponibles(self):
@@ -323,16 +344,22 @@ class SistemaRiego:
         """
         import os
         archivos = ListaEnlazada()
-        
+
         try:
-            directorio_grafos = "static/graphs"
-            if os.path.exists(directorio_grafos):
-                for archivo in os.listdir(directorio_grafos):
-                    if archivo.endswith('.html'):
-                        archivos.insertar_al_final(archivo)
+            # Buscar en la estructura organizada
+            directorio_output = "output"
+            if os.path.exists(directorio_output):
+                for invernadero_dir in os.listdir(directorio_output):
+                    directorio_grafos = os.path.join(directorio_output, invernadero_dir, "graficos")
+                    if os.path.exists(directorio_grafos):
+                        for archivo in os.listdir(directorio_grafos):
+                            if archivo.endswith('.html'):
+                                # Incluir la ruta relativa para el invernadero
+                                ruta_relativa = f"{invernadero_dir}/{archivo}"
+                                archivos.insertar_al_final(ruta_relativa)
         except Exception as e:
             print(f"Error listando archivos de visualización: {e}")
-            
+
         return archivos
 
     def generar_reporte_completo(self):
@@ -347,8 +374,11 @@ class SistemaRiego:
 
         print("Generando reporte completo...")
 
+        # Crear estructura de carpetas organizada por invernadero
+        nombre_invernadero = self.invernadero_actual.nombre.replace(" ", "_")
+        
         # Generar archivo XML de salida
-        exito_xml = self.generar_archivo_salida("output/salida.xml")
+        exito_xml = self.generar_archivo_salida(f"output/{nombre_invernadero}/salida.xml")
 
         # Generar reporte HTML
         exito_html = self.generar_reporte_html()
@@ -358,11 +388,10 @@ class SistemaRiego:
 
         if exito_xml and exito_html and exito_graphviz:
             print("Reporte completo generado exitosamente")
-            print("Archivos generados:")
-            print("  - output/salida.xml (XML de salida)")
-            print(
-                f"  - ReporteInvernadero_{self.invernadero_actual.nombre.replace(' ', '_')}.html (Reporte HTML)")
-            print("  - grafo_*.dot (Gráficos Graphviz)")
+            print("Archivos generados en estructura organizada:")
+            print(f"  - output/{nombre_invernadero}/salida.xml (XML de salida)")
+            print(f"  - output/{nombre_invernadero}/ReporteInvernadero_{nombre_invernadero}.html (Reporte HTML)")
+            print(f"  - output/{nombre_invernadero}/graficos/ (Gráficos Graphviz)")
             return True
         else:
             print("Hubo errores al generar algunos componentes del reporte")

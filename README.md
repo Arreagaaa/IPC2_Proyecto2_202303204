@@ -46,6 +46,31 @@ GuateRiegos 2.0 es un sistema completo de simulacion de riego robotico desarroll
 - **Graphviz**: Generacion de graficos
 - **XML**: Procesamiento de datos
 
+## 🗂️ Estructura Organizada de Archivos
+
+**Novedad Release 3.1**: Archivos de salida ahora organizados por invernadero
+
+```
+output/
+├── Invernadero_San_Marcos/
+│   ├── salida.xml                    # Resultados XML específicos
+│   ├── ReporteInvernadero_*.html     # Reporte HTML específico
+│   └── graficos/                     # Gráficos del invernadero
+│       ├── grafo_plan_riego.*        # Plan de riego (.dot, .png, .html)
+│       ├── grafo_cola_riego.*        # Cola de riego (.dot, .png, .html)
+│       ├── grafo_drones.*            # Estado de drones (.dot, .png, .html)
+│       └── visualization_t*.*        # Visualizaciones temporales
+└── Invernadero_Guatemala/
+    └── ... (misma estructura)
+```
+
+### ✨ Beneficios de la Nueva Organización:
+
+- 🎯 **Separación clara** de archivos por invernadero
+- 📁 **Navegación intuitiva** y mantenimiento sencillo
+- 🔧 **Escalabilidad** para múltiples invernaderos
+- 🧹 **Workspace limpio** sin archivos mezclados
+
 ## 🚦 Instalacion y Ejecucion
 
 ### Prerequisitos
@@ -82,7 +107,7 @@ python test_sistema_web.py
 
 ## 🎯 Cumplimiento de Requerimientos
 
-### Release 3 - Completo ✅
+### Release 3.1 - Completo ✅
 
 - [x] Simulacion completa con tiempos y restricciones
 - [x] Generacion de XML de salida con estadisticas
@@ -92,6 +117,8 @@ python test_sistema_web.py
 - [x] Diseño responsivo y profesional
 - [x] Documentacion completa
 - [x] Sistema de pruebas automatizado
+- [x] **NUEVO**: Estructura organizada de archivos por invernadero
+- [x] **NUEVO**: Sistema de carpetas automático para mejor organización
 
 ### Criterios Adicionales ✅
 
@@ -112,6 +139,8 @@ python test_sistema_web.py
 6. **Testing Automatizado**: Suite de pruebas para validacion
 7. **Arquitectura MVC**: Estructura profesional y escalable
 8. **Responsive Design**: Adaptable a todos los dispositivos
+9. **Organización Automática**: Sistema de carpetas por invernadero
+10. **Gestión de Archivos Avanzada**: Estructura escalable y mantenible
 
 ## 📞 Informacion del Estudiante
 

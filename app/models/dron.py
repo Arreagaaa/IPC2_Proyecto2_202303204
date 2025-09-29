@@ -13,7 +13,11 @@ class Dron:
 
     @property
     def nombre(self):
-        return self.id
+        return getattr(self, '_nombre', self.id)
+    
+    @nombre.setter
+    def nombre(self, valor):
+        self._nombre = valor
 
     def mover_adelante(self):
         if self.hilera_asignada and self.posicion_actual < self.hilera_asignada.obtener_cantidad_plantas():
