@@ -150,9 +150,9 @@ python test_sistema_web.py
 **Universidad**: Universidad de San Carlos de Guatemala  
 **Facultad**: Facultad de Ingenieria  
 **Curso**: Introduccion a la Programacion y Computacion 2  
-**Seccion**: A  
+**Seccion**: C
 **Semestre**: Segundo Semestre 2024
 
 ---
 
-_Desarrollado con ❤️ para IPC2 - Universidad de San Carlos de Guatemala_
+_Universidad de San Carlos de Guatemala_
