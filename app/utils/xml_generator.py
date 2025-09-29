@@ -10,12 +10,12 @@ class XMLGenerator:
         try:
             from app.models.resultado import Resultado
             import os
-            
+
             # Crear directorio si no existe
             directorio = os.path.dirname(ruta_salida)
             if directorio and not os.path.exists(directorio):
                 os.makedirs(directorio, exist_ok=True)
-            
+
             root = ET.Element("salida")
 
             if invernadero is None:
@@ -28,10 +28,12 @@ class XMLGenerator:
             hileras_elem = ET.SubElement(invernadero_elem, "numeroHileras")
             hileras_elem.text = str(invernadero.hileras.obtener_tamaño())
 
-            plantas_hilera_elem = ET.SubElement(invernadero_elem, "plantasXhilera")
+            plantas_hilera_elem = ET.SubElement(
+                invernadero_elem, "plantasXhilera")
             if invernadero.hileras.obtener_tamaño() > 0:
                 primera_hilera = invernadero.hileras.obtener(0)
-                plantas_hilera_elem.text = str(primera_hilera.plantas.obtener_tamaño())
+                plantas_hilera_elem.text = str(
+                    primera_hilera.plantas.obtener_tamaño())
             else:
                 plantas_hilera_elem.text = "0"
 
@@ -60,16 +62,19 @@ class XMLGenerator:
                     agua_dron = ET.SubElement(dron_elem, "aguaUtilizada")
                     agua_dron.text = str(resultado_dron.agua_utilizada)
 
-                    fertilizante_dron = ET.SubElement(dron_elem, "fertilizanteUtilizado")
-                    fertilizante_dron.text = str(resultado_dron.fertilizante_utilizado)
+                    fertilizante_dron = ET.SubElement(
+                        dron_elem, "fertilizanteUtilizado")
+                    fertilizante_dron.text = str(
+                        resultado_dron.fertilizante_utilizado)
 
             # Registro de instrucciones (opcional)
             if registro_instrucciones:
-                instrucciones_elem = ET.SubElement(root, "registroInstrucciones")
+                instrucciones_elem = ET.SubElement(
+                    root, "registroInstrucciones")
                 for entrada in registro_instrucciones:
                     tiempo_entry = ET.SubElement(instrucciones_elem, "tiempo")
                     tiempo_entry.set("segundo", str(entrada.tiempo))
-                    
+
                     for instruccion in entrada.instrucciones.instrucciones:
                         dron_instruccion = ET.SubElement(tiempo_entry, "dron")
                         dron_instruccion.set("id", str(instruccion.dron_id))
@@ -92,13 +97,14 @@ class XMLGenerator:
             tree = ET.parse(ruta_archivo)
             root = tree.getroot()
 
-            elementos_requeridos = [
-                'invernadero',
-                'tiempoTotal',
-                'aguaTotal',
-                'fertilizanteTotal',
-                'resultadosDrones'
-            ]
+            # Usar ListaEnlazada en lugar de lista nativa
+            from app.tdas.lista_enlazada import ListaEnlazada
+            elementos_requeridos = ListaEnlazada()
+            elementos_requeridos.insertar_al_final('invernadero')
+            elementos_requeridos.insertar_al_final('tiempoTotal')
+            elementos_requeridos.insertar_al_final('aguaTotal')
+            elementos_requeridos.insertar_al_final('fertilizanteTotal')
+            elementos_requeridos.insertar_al_final('resultadosDrones')
 
             for elemento in elementos_requeridos:
                 if root.find(elemento) is None:
@@ -121,15 +127,19 @@ class XMLGenerator:
             tree = ET.parse(ruta_archivo)
             root = tree.getroot()
 
-            estadisticas = {
-                'invernadero': root.find('invernadero').get('nombre'),
-                'tiempo_total': float(root.find('tiempoTotal').text),
-                'agua_total': float(root.find('aguaTotal').text),
-                'fertilizante_total': float(root.find('fertilizanteTotal').text),
-                'numero_drones': len(root.find('resultadosDrones').findall('dron'))
-            }
+            # Usar resultado en lugar de diccionario
+            from app.models.resultado import Resultado
+            resultado = Resultado()
+            resultado.invernadero_nombre = root.find(
+                'invernadero').get('nombre')
+            resultado.tiempo_total = float(root.find('tiempoTotal').text)
+            resultado.agua_total = float(root.find('aguaTotal').text)
+            resultado.fertilizante_total = float(
+                root.find('fertilizanteTotal').text)
+            resultado.numero_drones = len(
+                root.find('resultadosDrones').findall('dron'))
 
-            return estadisticas
+            return resultado
 
         except Exception as e:
             print(f"Error obteniendo estadisticas XML: {e}")
