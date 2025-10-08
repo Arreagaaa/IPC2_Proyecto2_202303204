@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for, send_from_directory
 import os
-import tempfile
-import zipfile
 from werkzeug.utils import secure_filename
 from app.controllers.sistema_riego import SistemaRiego
 from app.tdas.lista_enlazada import ListaEnlazada

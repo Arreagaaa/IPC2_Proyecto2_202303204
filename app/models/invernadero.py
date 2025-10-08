@@ -20,7 +20,8 @@ class Invernadero:
         self.nombre = nombre
         self.hileras = ListaEnlazada()  # Lista de hileras
         self.drones = ListaEnlazada()  # Lista de drones
-        self.plan_riego = PlanRiego()  # Plan de riego actual
+        self.planes_riego = ListaEnlazada()  # Lista de planes de riego disponibles
+        self.plan_riego = PlanRiego()  # Plan de riego actual (para compatibilidad)
 
     @property
     def numero_hileras(self):
@@ -71,8 +72,66 @@ class Invernadero:
         hilera = self.obtener_hilera(numero_hilera)
         hilera.asignar_dron(dron)
 
-    def configurar_plan_riego(self, plan_cadena):
+    def configurar_plan_riego(self, plan_cadena, nombre_plan=""):
+        # Método legacy - configura plan_riego principal
+        self.plan_riego.nombre = nombre_plan
         self.plan_riego.parsear_plan_desde_cadena(plan_cadena)
+
+        # También agregar a la lista de planes si no existe
+        if not self.buscar_plan_por_nombre(nombre_plan):
+            nuevo_plan = PlanRiego()
+            nuevo_plan.nombre = nombre_plan
+            nuevo_plan.parsear_plan_desde_cadena(plan_cadena)
+            self.planes_riego.insertar_al_final(nuevo_plan)
+
+    def agregar_plan_riego(self, plan_cadena, nombre_plan):
+        # Agregar un nuevo plan de riego a la lista de planes disponibles
+        # Verificar si ya existe un plan con ese nombre
+        plan_existente = self.buscar_plan_por_nombre(nombre_plan)
+        if plan_existente:
+            # Actualizar plan existente
+            plan_existente.parsear_plan_desde_cadena(plan_cadena)
+        else:
+            # Crear nuevo plan
+            nuevo_plan = PlanRiego()
+            nuevo_plan.nombre = nombre_plan
+            nuevo_plan.parsear_plan_desde_cadena(plan_cadena)
+            self.planes_riego.insertar_al_final(nuevo_plan)
+
+            # Si es el primer plan, también configurarlo como principal
+            if self.planes_riego.obtener_tamaño() == 1:
+                self.configurar_plan_riego(plan_cadena, nombre_plan)
+
+    def buscar_plan_por_nombre(self, nombre_plan):
+        # Buscar un plan por su nombre
+        for i in range(self.planes_riego.obtener_tamaño()):
+            plan = self.planes_riego.obtener(i)
+            if plan.nombre == nombre_plan:
+                return plan
+        return None
+
+    def seleccionar_plan_activo(self, nombre_plan):
+        # Seleccionar que plan usar como activo
+        plan_encontrado = self.buscar_plan_por_nombre(nombre_plan)
+        if plan_encontrado:
+            # Copiar el plan encontrado al plan_riego principal
+            self.plan_riego.nombre = plan_encontrado.nombre
+            self.plan_riego.parsear_plan_desde_cadena(
+                plan_encontrado.obtener_plan_original())
+            return True
+        return False
+
+    def obtener_nombres_planes(self):
+        # Obtener lista de nombres de todos los planes disponibles
+        nombres = []
+        for i in range(self.planes_riego.obtener_tamaño()):
+            plan = self.planes_riego.obtener(i)
+            nombres.append(plan.nombre)
+        return nombres
+
+    def obtener_cantidad_planes(self):
+        # Obtener cantidad de planes disponibles
+        return self.planes_riego.obtener_tamaño()
 
     def obtener_cantidad_hileras(self):
         return self.hileras.obtener_tamaño()

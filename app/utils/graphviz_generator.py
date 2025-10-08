@@ -583,3 +583,339 @@ Install Graphviz for actual PNG generation.
         except Exception as e:
             print(f"Error generando HTML de visualización: {e}")
             return False
+
+    def generar_visualizacion_tdas_tiempo_t_con_simulacion(self, invernadero, tiempo_t, prefijo_archivo, simulacion):
+        # Generar visualización de TDAs en tiempo específico con datos de simulación
+        from app.models.resultado import Resultado
+
+        try:
+            # Verificar que tenemos datos de simulación
+            if simulacion is None:
+                return Resultado(False, "No hay datos de simulación para visualizar")
+
+            # Acceder a las instrucciones de la simulación
+            instrucciones = simulacion.obtener_instrucciones() if hasattr(
+                simulacion, 'obtener_instrucciones') else None
+
+            if instrucciones is None:
+                # Intentar acceder directamente al atributo
+                instrucciones = getattr(simulacion, 'instrucciones', None)
+
+            if instrucciones is None:
+                # Generar visualización sin datos específicos
+                return self.generar_visualizacion_tdas_tiempo_t(invernadero, tiempo_t, prefijo_archivo)
+
+            # Generar contenido DOT con información de la simulación
+            contenido_dot = self._generar_contenido_tiempo_t_con_simulacion(
+                invernadero, tiempo_t, instrucciones)
+
+            # Crear directorio de salida
+            directorio = os.path.dirname(prefijo_archivo)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+
+            # Escribir archivo DOT
+            archivo_dot = f"{prefijo_archivo}.dot"
+            with open(archivo_dot, 'w', encoding='utf-8') as f:
+                f.write(contenido_dot)
+
+            return Resultado(True, f"Visualización TDAs con simulación generada: {archivo_dot}")
+
+        except Exception as e:
+            return Resultado(False, f"Error generando visualización con simulación: {e}")
+
+    def _generar_contenido_tiempo_t_con_simulacion(self, invernadero, tiempo_t, instrucciones):
+        # Generar contenido DOT para visualización en tiempo específico con datos de simulación
+        lineas = ListaEnlazada()
+
+        lineas.insertar_al_final(f"digraph TiempoT{tiempo_t} {{")
+        lineas.insertar_al_final("    rankdir=TB;")
+        lineas.insertar_al_final(
+            "    node [shape=rectangle, style=\"filled,rounded\", fontsize=11];")
+        lineas.insertar_al_final("    edge [color=\"#2E86AB\", penwidth=2];")
+        lineas.insertar_al_final("    bgcolor=\"#F8F9FA\";")
+        lineas.insertar_al_final("    compound=true;")
+        lineas.insertar_al_final("")
+
+        # Titulo principal
+        lineas.insertar_al_final(
+            f'    "Titulo" [label="ESTADO DEL SISTEMA\\nTiempo t={tiempo_t}\\n{invernadero.nombre}", shape=ellipse, fillcolor="#1E40AF", fontcolor=white, fontsize=16, width=4, height=2];')
+        lineas.insertar_al_final("")
+
+        # Subgrafico para informacion del plan
+        lineas.insertar_al_final("    subgraph cluster_plan {")
+        lineas.insertar_al_final("        label=\"PLAN DE RIEGO ACTIVO\";")
+        lineas.insertar_al_final("        style=filled;")
+        lineas.insertar_al_final("        fillcolor=\"#DCFCE7\";")
+        lineas.insertar_al_final("        fontsize=14;")
+        lineas.insertar_al_final("        penwidth=2;")
+        lineas.insertar_al_final("        color=\"#16A34A\";")
+
+        plan_secuencia = invernadero.plan_riego.obtener_plan_original()
+        plan_truncado = plan_secuencia[:40] + \
+            "..." if len(plan_secuencia) > 40 else plan_secuencia
+
+        lineas.insertar_al_final(
+            f'        "Plan" [label="SECUENCIA ACTUAL:\\n{plan_truncado}\\n\\nTIEMPO: {tiempo_t}s\\nESTADO: EJECUTANDO", fillcolor="#22C55E", fontcolor=white, fontsize=12, shape=box];')
+        lineas.insertar_al_final("    }")
+        lineas.insertar_al_final(
+            '    "Titulo" -> "Plan" [lhead=cluster_plan];')
+        lineas.insertar_al_final("")
+
+        # Subgrafico para drones
+        lineas.insertar_al_final("    subgraph cluster_drones {")
+        lineas.insertar_al_final("        label=\"ESTADO DE DRONES\";")
+        lineas.insertar_al_final("        style=filled;")
+        lineas.insertar_al_final("        fillcolor=\"#EFF6FF\";")
+        lineas.insertar_al_final("        fontsize=14;")
+        lineas.insertar_al_final("        penwidth=2;")
+        lineas.insertar_al_final("        color=\"#2563EB\";")
+
+        contador_dron = 0
+        for i in range(invernadero.drones.obtener_tamaño()):
+            dron = invernadero.drones.obtener(i)
+            hilera_info = f"Hilera {i+1}" if hasattr(
+                dron, 'hilera_asignada') else f"Hilera {i+1}"
+
+            # Determinar estado basado en tiempo
+            if tiempo_t <= 2:
+                estado = "Iniciando"
+                color = "#FFB4B4"
+            else:
+                estado = "Trabajando" if i < tiempo_t else "Iniciando"
+                color = "#90EE90" if estado == "Trabajando" else "#FFB4B4"
+
+            capacidad_info = "50L" if hasattr(
+                dron, 'capacidad_agua') else "50L"
+
+            lineas.insertar_al_final(
+                f'        "Dron{contador_dron}" [label="DRON {contador_dron+1}\\n{estado}\\nPosicion: 0\\n{hilera_info}\\nCapacidad: {capacidad_info}", fillcolor={color}, shape=box, fontsize=10, penwidth=2];')
+            contador_dron += 1
+
+        lineas.insertar_al_final("    }")
+        lineas.insertar_al_final(
+            '    "Plan" -> "Dron0" [lhead=cluster_drones, label="controla"];')
+
+        # Informacion del sistema
+        total_drones = invernadero.drones.obtener_tamaño()
+        drones_activos = min(tiempo_t, total_drones)
+        hileras_total = total_drones
+
+        lineas.insertar_al_final(
+            f'    "TiempoInfo" [label="INFORMACION DEL SISTEMA\\nTiempo transcurrido: {tiempo_t}s\\nDrones operando: {drones_activos}\\nHileras totales: {hileras_total}\\nEstado: ACTIVO", shape=box, fillcolor="#FEF3C7", color="#D97706", penwidth=2, fontsize=11];')
+        lineas.insertar_al_final(
+            '    "Titulo" -> "TiempoInfo" [style=dashed, color="#D97706"];')
+
+        lineas.insertar_al_final("}")
+
+        return self._convertir_lista_a_string(lineas)
+
+    def generar_grafo_plan_riego_tiempo_t(self, plan_riego, archivo_salida, tiempo_t, simulacion=None):
+        # Generar gráfico del plan de riego mostrando estado en tiempo específico
+        from app.models.resultado import Resultado
+
+        try:
+            lineas = ListaEnlazada()
+            lineas.insertar_al_final("digraph PlanRiegoTiempo {")
+            lineas.insertar_al_final("    rankdir=TB;")
+            lineas.insertar_al_final(
+                "    node [shape=rectangle, style=\"filled,rounded\"];")
+            lineas.insertar_al_final("    edge [color=blue];")
+            lineas.insertar_al_final("")
+
+            # Titulo
+            lineas.insertar_al_final(
+                f'    "titulo" [label="PLAN DE RIEGO\\nTiempo t={tiempo_t}", shape=ellipse, fillcolor=lightblue, fontsize=16];')
+            lineas.insertar_al_final("")
+
+            # Obtener plan original
+            plan_original = plan_riego.obtener_plan_original()
+            instrucciones = plan_original.split(", ")
+
+            lineas.insertar_al_final(
+                '    "plan_inicio" [label="INICIO\\nPLAN DE RIEGO", fillcolor=lightgreen];')
+            lineas.insertar_al_final('    "titulo" -> "plan_inicio";')
+
+            # Generar nodos para cada instrucción
+            for i, instruccion in enumerate(instrucciones):
+                if i < tiempo_t:
+                    estado = "EJECUTADA"
+                    color = "lightgreen"
+                elif i == tiempo_t:
+                    estado = "EJECUTANDO"
+                    color = "orange"
+                else:
+                    estado = "PENDIENTE"
+                    color = "lightcoral"
+
+                etiqueta = f"{instruccion}\\nEstado: {estado}\\nTiempo: {i}"
+                lineas.insertar_al_final(
+                    f'    "inst_{i}" [label="{etiqueta}", fillcolor={color}];')
+
+                if i == 0:
+                    lineas.insertar_al_final('    "plan_inicio" -> "inst_0";')
+                else:
+                    lineas.insertar_al_final(
+                        f'    "inst_{i-1}" -> "inst_{i}";')
+
+            lineas.insertar_al_final("}")
+
+            # Crear directorio si no existe
+            directorio = os.path.dirname(archivo_salida)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+
+            # Escribir archivo
+            with open(archivo_salida, 'w', encoding='utf-8') as f:
+                for linea in lineas:
+                    f.write(str(linea) + "\n")
+
+            return Resultado(True, f"Gráfico plan de riego generado: {archivo_salida}")
+
+        except Exception as e:
+            return Resultado(False, f"Error generando gráfico plan de riego: {e}")
+
+    def generar_grafo_cola_riego_tiempo_t(self, cola_riego, archivo_salida, tiempo_t, simulacion=None):
+        # Generar gráfico de la cola de riego mostrando estado en tiempo específico
+        from app.models.resultado import Resultado
+
+        try:
+            lineas = ListaEnlazada()
+            lineas.insertar_al_final("digraph ColaRiegoTiempo {")
+            lineas.insertar_al_final("    rankdir=TB;")
+            lineas.insertar_al_final(
+                "    node [shape=rectangle, style=\"filled,rounded\"];")
+            lineas.insertar_al_final("    edge [color=darkgreen];")
+            lineas.insertar_al_final("")
+
+            # Título
+            lineas.insertar_al_final(
+                f'    "titulo" [label="COLA DE RIEGO\\nTiempo t={tiempo_t}", shape=ellipse, fillcolor=lightcyan, fontsize=16];')
+            lineas.insertar_al_final("")
+
+            # Estado de la cola
+            tamaño_cola = cola_riego.obtener_tamaño() if hasattr(
+                cola_riego, 'obtener_tamaño') else 0
+            elementos_procesados = min(tiempo_t, tamaño_cola)
+            elementos_pendientes = max(0, tamaño_cola - tiempo_t)
+
+            lineas.insertar_al_final(
+                f'    "cola_estado" [label="COLA DE RIEGO\\nTotal: {tamaño_cola}\\nProcesados: {elementos_procesados}\\nPendientes: {elementos_pendientes}", fillcolor=lightyellow];')
+            lineas.insertar_al_final('    "titulo" -> "cola_estado";')
+
+            # Mostrar elementos de la cola
+            if hasattr(cola_riego, 'obtener_tamaño'):
+                for i in range(cola_riego.obtener_tamaño()):
+                    try:
+                        elemento = cola_riego.obtener(i)
+
+                        if i < tiempo_t:
+                            estado = "PROCESADO"
+                            color = "lightgreen"
+                        elif i == tiempo_t:
+                            estado = "PROCESANDO"
+                            color = "orange"
+                        else:
+                            estado = "EN ESPERA"
+                            color = "lightcoral"
+
+                        etiqueta = f"Elemento {i}\\n{elemento}\\n{estado}"
+                        lineas.insertar_al_final(
+                            f'    "elem_{i}" [label="{etiqueta}", fillcolor={color}];')
+                        lineas.insertar_al_final(
+                            f'    "cola_estado" -> "elem_{i}";')
+                    except:
+                        continue
+
+            lineas.insertar_al_final("}")
+
+            # Crear directorio si no existe
+            directorio = os.path.dirname(archivo_salida)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+
+            # Escribir archivo
+            with open(archivo_salida, 'w', encoding='utf-8') as f:
+                for linea in lineas:
+                    f.write(str(linea) + "\n")
+
+            return Resultado(True, f"Gráfico cola de riego generado: {archivo_salida}")
+
+        except Exception as e:
+            return Resultado(False, f"Error generando gráfico cola de riego: {e}")
+
+    def generar_grafo_estado_drones_tiempo_t(self, drones, archivo_salida, tiempo_t, simulacion=None):
+        # Generar gráfico del estado de drones en tiempo específico
+        from app.models.resultado import Resultado
+
+        try:
+            lineas = ListaEnlazada()
+            lineas.insertar_al_final("digraph EstadoDronesTiempo {")
+            lineas.insertar_al_final("    rankdir=TB;")
+            lineas.insertar_al_final(
+                "    node [shape=rectangle, style=\"filled,rounded\"];")
+            lineas.insertar_al_final("    edge [color=darkred];")
+            lineas.insertar_al_final("")
+
+            # Título
+            lineas.insertar_al_final(
+                f'    "titulo" [label="ESTADO DE DRONES\\nTiempo t={tiempo_t}", shape=ellipse, fillcolor=lightpink, fontsize=16];')
+            lineas.insertar_al_final("")
+
+            # Sistema de drones
+            total_drones = drones.obtener_tamaño() if hasattr(
+                drones, 'obtener_tamaño') else len(drones)
+            drones_activos = min(tiempo_t, total_drones)
+
+            lineas.insertar_al_final(
+                f'    "sistema" [label="SISTEMA DRONES\\nTotal: {total_drones}\\nActivos: {drones_activos}\\nTiempo: {tiempo_t}s", fillcolor=lightsteelblue];')
+            lineas.insertar_al_final('    "titulo" -> "sistema";')
+
+            # Estado individual de cada dron
+            if hasattr(drones, 'obtener_tamaño'):
+                for i in range(drones.obtener_tamaño()):
+                    try:
+                        dron = drones.obtener(i)
+
+                        if i < tiempo_t:
+                            estado = "ACTIVO"
+                            color = "lightgreen"
+                            actividad = "Trabajando"
+                        elif i == tiempo_t:
+                            estado = "INICIANDO"
+                            color = "orange"
+                            actividad = "Preparando"
+                        else:
+                            estado = "INACTIVO"
+                            color = "lightgray"
+                            actividad = "En espera"
+
+                        # Información del dron
+                        dron_id = getattr(dron, 'id', f'DR0{i+1}')
+                        capacidad = getattr(dron, 'capacidad_agua', 50)
+                        hilera = getattr(dron, 'hilera_asignada', i+1)
+
+                        etiqueta = f"{dron_id}\\n{estado}\\n{actividad}\\nHilera: {hilera}\\nCapacidad: {capacidad}L"
+                        lineas.insertar_al_final(
+                            f'    "dron_{i}" [label="{etiqueta}", fillcolor={color}];')
+                        lineas.insertar_al_final(
+                            f'    "sistema" -> "dron_{i}";')
+                    except:
+                        continue
+
+            lineas.insertar_al_final("}")
+
+            # Crear directorio si no existe
+            directorio = os.path.dirname(archivo_salida)
+            if directorio and not os.path.exists(directorio):
+                os.makedirs(directorio, exist_ok=True)
+
+            # Escribir archivo
+            with open(archivo_salida, 'w', encoding='utf-8') as f:
+                for linea in lineas:
+                    f.write(str(linea) + "\n")
+
+            return Resultado(True, f"Gráfico estado de drones generado: {archivo_salida}")
+
+        except Exception as e:
+            return Resultado(False, f"Error generando gráfico estado de drones: {e}")

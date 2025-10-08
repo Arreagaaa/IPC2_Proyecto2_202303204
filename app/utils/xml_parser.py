@@ -89,15 +89,16 @@ class XMLParser:
                                     dron_copia.id = id_dron
                                     dron_copia.nombre = dron_disponible.nombre
                                     dron_copia.posicion_actual = 0  # Inicio de hilera
-                                    
+
                                     # Buscar y asignar la hilera correspondiente
                                     for hilera in invernadero.hileras:
                                         if hilera.numero == hilera_num:
                                             dron_copia.asignar_hilera(hilera)
                                             hilera.asignar_dron(dron_copia)
                                             break
-                                    
-                                    invernadero.drones.insertar_al_final(dron_copia)
+
+                                    invernadero.drones.insertar_al_final(
+                                        dron_copia)
                                     break
 
                     # Parsear planes de riego
@@ -107,9 +108,9 @@ class XMLParser:
                             nombre_plan = plan_xml.get('nombre')
                             secuencia_plan = plan_xml.text.strip() if plan_xml.text else ""
 
-                            # Configurar plan de riego en el invernadero
-                            invernadero.configurar_plan_riego(secuencia_plan)
-                            # El plan se guarda en plan_riego del invernadero
+                            # Agregar plan a la lista de planes disponibles
+                            invernadero.agregar_plan_riego(
+                                secuencia_plan, nombre_plan)
 
                     self.invernaderos.insertar_al_final(invernadero)
 

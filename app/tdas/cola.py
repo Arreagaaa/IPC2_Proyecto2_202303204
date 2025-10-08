@@ -71,7 +71,7 @@ class Cola:
         return "Frente -> [" + cadena_elementos + "] <- Final"
 
     def crear_copia(self):
-        """Crear una copia independiente de la cola para visualización"""
+        # Crear una copia independiente de la cola para visualización
         nueva_cola = Cola()
         actual = self.frente
         while actual:

@@ -12,9 +12,11 @@ class PasoRiego:
 
 # plan de riego con secuencia de pasos
 class PlanRiego:
-    def __init__(self):
+    def __init__(self, nombre=""):
         self.secuencia_riego = Cola()  # Cola con la secuencia de riego
         self.plan_original = ListaEnlazada()  # Lista para mantener el plan original
+        # Nombre del plan (e.g., "Dia 1", "Dia 2", "Final")
+        self.nombre = nombre
 
     def agregar_paso(self, numero_hilera, numero_planta):
         paso = PasoRiego(numero_hilera, numero_planta, False)
